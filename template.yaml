@@ -1,0 +1,259 @@
+# Template Sensors Configuration
+# All template sensors organized by category
+
+# =============================================================================
+# ONEDRIVE SENSORS
+# =============================================================================
+# Added with Claude.ai on 27 Aug 2025
+
+- sensor:
+    # OneDrive Storage Usage Percentage
+    - name: "OneDrive Storage Percentage"
+      unique_id: onedrive_storage_percentage
+      unit_of_measurement: "%"
+      state_class: measurement
+      icon: "mdi:percent"
+      state: >
+        {% if states('sensor.onedrive_storage_used') not in ['unavailable', 'unknown'] and 
+              states('sensor.onedrive_storage_total') not in ['unavailable', 'unknown'] %}
+          {{ ((states('sensor.onedrive_storage_used')|float / 
+               states('sensor.onedrive_storage_total')|float) * 100)|round(1) }}
+        {% else %}
+          unavailable
+        {% endif %}
+
+    # OneDrive Remaining Storage
+    - name: "OneDrive Storage Remaining"
+      unique_id: onedrive_storage_remaining
+      unit_of_measurement: "GB"
+      state_class: measurement
+      device_class: data_size
+      icon: "mdi:harddisk-remove"
+      state: >
+        {% if states('sensor.onedrive_storage_used') not in ['unavailable', 'unknown'] and 
+              states('sensor.onedrive_storage_total') not in ['unavailable', 'unknown'] %}
+          {{ (states('sensor.onedrive_storage_total')|float - 
+              states('sensor.onedrive_storage_used')|float)|round(2) }}
+        {% else %}
+          unavailable
+        {% endif %}
+
+    # OneDrive Storage Status (text-based)
+    - name: "OneDrive Storage Status"
+      unique_id: onedrive_storage_status
+      icon: "mdi:information"
+      state: >
+        {% set percentage = states('sensor.onedrive_storage_percentage')|float(0) %}
+        {% if percentage < 50 %}
+          Plenty of Space
+        {% elif percentage < 70 %}
+          Good
+        {% elif percentage < 85 %}
+          Getting Full
+        {% elif percentage < 95 %}
+          Almost Full
+        {% else %}
+          Critical
+        {% endif %}
+
+    # OneDrive Days Until Full (based on usage trend)
+    - name: "OneDrive Days Until Full"
+      unique_id: onedrive_days_until_full
+      unit_of_measurement: "days"
+      icon: "mdi:calendar-clock"
+      state: >
+        {% set remaining = states('sensor.onedrive_storage_remaining')|float(0) %}
+        {% set daily_usage = 0.1 %}  # Adjust based on your usage pattern
+        {% if remaining > 0 and daily_usage > 0 %}
+          {{ (remaining / daily_usage)|round(0) }}
+        {% else %}
+          unavailable
+        {% endif %}
+
+# =============================================================================
+# ENERGY MONITORING SENSORS
+# =============================================================================
+    # Combined Daily Energy Production from both inverters
+    - name: "Daily Energy Production"
+      unique_id: daily_energy_production_combined
+      unit_of_measurement: "kWh"
+      state_class: total_increasing
+      device_class: energy
+      icon: "mdi:solar-power"
+      state: >
+        {{ states('sensor.inverter_1_daily_energy')|float(0) + 
+           states('sensor.inverter_2_daily_energy')|float(0) }}
+      availability: >
+        {{ states('sensor.inverter_1_daily_energy') not in ['unavailable', 'unknown'] and
+           states('sensor.inverter_2_daily_energy') not in ['unavailable', 'unknown'] }}
+
+    # Combined Current Power Output
+    - name: "Total Power Output"
+      unique_id: total_power_output_combined
+      unit_of_measurement: "W"
+      state_class: measurement
+      device_class: power
+      icon: "mdi:flash"
+      state: >
+        {{ states('sensor.inverter_1_power')|float(0) + 
+           states('sensor.inverter_2_power')|float(0) }}
+      availability: >
+        {{ states('sensor.inverter_1_power') not in ['unavailable', 'unknown'] and
+           states('sensor.inverter_2_power') not in ['unavailable', 'unknown'] }}
+
+    # Energy Production Efficiency
+    - name: "Solar Efficiency"
+      unique_id: solar_efficiency
+      unit_of_measurement: "%"
+      state_class: measurement
+      icon: "mdi:gauge"
+      state: >
+        {% set current_power = states('sensor.total_power_output')|float(0) %}
+        {% set max_capacity = 16000 %}  # 2 x 8kW inverters
+        {% if current_power > 0 and max_capacity > 0 %}
+          {{ (current_power / max_capacity * 100)|round(1) }}
+        {% else %}
+          0
+        {% endif %}
+
+# =============================================================================
+# SYSTEM HEALTH SENSORS
+# =============================================================================
+    # Home Assistant Uptime
+    - name: "Home Assistant Uptime"
+      unique_id: ha_uptime
+      icon: "mdi:clock"
+      state: >
+        {% set uptime = states('sensor.uptime')|as_datetime %}
+        {% if uptime %}
+          {% set days = (now() - uptime).days %}
+          {% set hours = ((now() - uptime).seconds // 3600) %}
+          {% if days > 0 %}
+            {{ days }}d {{ hours }}h
+          {% else %}
+            {{ hours }}h
+          {% endif %}
+        {% else %}
+          Unknown
+        {% endif %}
+
+    # System Load Summary
+    - name: "System Health Status"
+      unique_id: system_health_status
+      icon: "mdi:heart-pulse"
+      state: >
+        {% set cpu = states('sensor.processor_use')|float(0) %}
+        {% set memory = states('sensor.memory_use_percent')|float(0) %}
+        {% set disk = states('sensor.disk_use_percent')|float(0) %}
+        {% if cpu < 70 and memory < 80 and disk < 85 %}
+          Excellent
+        {% elif cpu < 85 and memory < 90 and disk < 90 %}
+          Good
+        {% else %}
+          Needs Attention
+        {% endif %}
+
+# =============================================================================
+# BINARY SENSORS
+# =============================================================================
+- binary_sensor:
+    # OneDrive Storage Warning Alert
+    - name: "OneDrive Storage Warning"
+      unique_id: onedrive_storage_warning
+      device_class: problem
+      icon: "mdi:alert"
+      state: >
+        {{ states('sensor.onedrive_storage_percentage')|float(0) > 85 }}
+
+    # OneDrive Connection Health
+    - name: "OneDrive Health"
+      unique_id: onedrive_health
+      device_class: connectivity
+      icon: "mdi:cloud-check"
+      state: >
+        {% set last_sync = states('sensor.onedrive_last_sync') %}
+        {% if last_sync not in ['unavailable', 'unknown'] %}
+          {% set sync_time = as_timestamp(last_sync) %}
+          {% set current_time = as_timestamp(now()) %}
+          {% set hours_since_sync = (current_time - sync_time) / 3600 %}
+          {{ hours_since_sync < 24 }}
+        {% else %}
+          false
+        {% endif %}
+
+    # Solar Production Status
+    - name: "Solar Production Active"
+      unique_id: solar_production_active
+      device_class: power
+      icon: "mdi:solar-power"
+      state: >
+        {{ states('sensor.total_power_output')|float(0) > 100 }}
+
+    # System Health Alert
+    - name: "System Health Alert"
+      unique_id: system_health_alert
+      device_class: problem
+      icon: "mdi:alert-circle"
+      state: >
+        {% set cpu = states('sensor.processor_use')|float(0) %}
+        {% set memory = states('sensor.memory_use_percent')|float(0) %}
+        {% set disk = states('sensor.disk_use_percent')|float(0) %}
+        {{ cpu > 85 or memory > 90 or disk > 90 }}
+
+    # High Energy Production Day
+    - name: "High Production Day"
+      unique_id: high_production_day
+      device_class: power
+      icon: "mdi:weather-sunny"
+      state: >
+        {{ states('sensor.daily_energy_production')|float(0) > 40 }}  # Adjust threshold as needed
+
+# =============================================================================
+# TIME-BASED SENSORS
+# =============================================================================
+- sensor:
+    # Current Time Period for Automations
+    - name: "Time Period"
+      unique_id: time_period
+      icon: "mdi:clock"
+      state: >
+        {% set hour = now().hour %}
+        {% if hour >= 6 and hour < 12 %}
+          Morning
+        {% elif hour >= 12 and hour < 17 %}
+          Afternoon
+        {% elif hour >= 17 and hour < 21 %}
+          Evening
+        {% else %}
+          Night
+        {% endif %}
+
+    # Days Until Weekend
+    - name: "Days Until Weekend"
+      unique_id: days_until_weekend
+      unit_of_measurement: "days"
+      icon: "mdi:calendar-weekend"
+      state: >
+        {% set today = now().weekday() %}
+        {% if today < 5 %}
+          {{ 5 - today }}
+        {% else %}
+          0
+        {% endif %}
+
+    # Season Sensor
+    - name: "Current Season"
+      unique_id: current_season
+      icon: "mdi:weather-partly-cloudy"
+      state: >
+        {% set month = now().month %}
+        {% if month in [12, 1, 2] %}
+          Summer
+        {% elif month in [3, 4, 5] %}
+          Autumn
+        {% elif month in [6, 7, 8] %}
+          Winter
+        {% else %}
+          Spring
+        {% endif %}
+#-------------------------------------------------------------------------------

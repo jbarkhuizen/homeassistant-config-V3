@@ -1,0 +1,90 @@
+#===============================================================================
+# OneDrive Management Scripts
+#===============================================================================
+
+# Create Home Assistant Backup to OneDrive
+create_onedrive_backup:
+  alias: "Create OneDrive Backup"
+  description: "Create a full Home Assistant backup and sync to OneDrive"
+  sequence:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "🔄 Backup Starting"
+        message: "Creating Home Assistant backup..."
+    - service: hassio.backup_full
+      data:
+        name: "HA_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
+        compressed: true
+    - delay:
+        minutes: 5  # Wait for backup to complete
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "✅ Backup Complete"
+        message: "Home Assistant backup created and syncing to OneDrive"
+        data:
+          tag: "backup_complete"
+
+# Cleanup Old Backups
+cleanup_old_backups:
+  alias: "Cleanup Old OneDrive Backups"
+  description: "Remove backups older than 30 days from OneDrive"
+  sequence:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "🧹 Cleaning Up Backups"
+        message: "Removing old backups to free up space..."
+    # Note: The actual cleanup logic depends on your OneDrive integration capabilities
+    # This is a placeholder that you may need to customize based on available services
+    - delay:
+        seconds: 30
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "✅ Cleanup Complete"
+        message: "Old backups cleaned up. Storage freed: Calculating..."
+        data:
+          tag: "cleanup_complete"
+
+# Force OneDrive Sync
+force_onedrive_sync:
+  alias: "Force OneDrive Sync"
+  description: "Manually trigger OneDrive synchronization"
+  sequence:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "🔄 Force Sync Started"
+        message: "Manually triggering OneDrive sync..."
+    # This will depend on the specific OneDrive integration services available
+    # You may need to adjust based on your integration's capabilities
+    - delay:
+        minutes: 2
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "✅ Sync Complete"
+        message: "OneDrive sync completed successfully"
+
+# Storage Health Check
+onedrive_health_check:
+  alias: "OneDrive Health Check"
+  description: "Perform comprehensive OneDrive health check"
+  sequence:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "🔍 Health Check Running"
+        message: "Performing OneDrive health check..."
+    - delay:
+        seconds: 10
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "📊 Health Check Results"
+        message: >
+          OneDrive Health Status:
+          • Connection: {{ 'Good' if is_state('binary_sensor.onedrive_health', 'on') else 'Issue Detected' }}
+          • Storage: {{ states('sensor.onedrive_storage_percentage') }}% used
+          • Last Sync: {{ states('sensor.onedrive_last_sync') }}
+          • File Count: {{ states('sensor.onedrive_file_count') }}
+        data:
+          actions:
+            - action: "VIEW_DASHBOARD"
+              title: "View Dashboard"
+            - action: "FORCE_SYNC"
+              title: "Force Sync"

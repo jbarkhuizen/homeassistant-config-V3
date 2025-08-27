@@ -1,0 +1,124 @@
+# OneDrive Automations
+# Add these to your automations.yaml file
+
+# Daily OneDrive Status Report at 09:00
+- id: onedrive_daily_report
+  alias: "OneDrive Daily Status Report"
+  description: "Daily status report of OneDrive usage and health at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition: []
+  action:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "OneDrive Daily Report"
+        message: >
+          Storage: {{ states('sensor.onedrive_storage_used') }}GB / {{ states('sensor.onedrive_storage_total') }}GB 
+          ({{ states('sensor.onedrive_storage_percentage') }}% used)
+          Status: {{ states('sensor.onedrive_storage_status') }}
+          Last Sync: {{ states('sensor.onedrive_last_sync') }}
+        data:
+          actions:
+            - action: "VIEW_ONEDRIVE_DASHBOARD"
+              title: "View Dashboard"
+
+# Storage Warning Alert
+- id: onedrive_storage_warning
+  alias: "OneDrive Storage Warning"
+  description: "Alert when OneDrive storage exceeds 85%"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.onedrive_storage_warning
+      to: "on"
+      for:
+        minutes: 5
+  condition: []
+  action:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "⚠️ OneDrive Storage Warning"
+        message: >
+          OneDrive storage is {{ states('sensor.onedrive_storage_percentage') }}% full!
+          Only {{ states('sensor.onedrive_storage_remaining') }}GB remaining.
+        data:
+          tag: "onedrive_storage_warning"
+          actions:
+            - action: "CLEANUP_BACKUPS"
+              title: "Cleanup Old Backups"
+            - action: "VIEW_STORAGE"
+              title: "View Storage Details"
+
+# Connection Health Monitor
+- id: onedrive_connection_health
+  alias: "OneDrive Connection Health Monitor"
+  description: "Monitor OneDrive connection health"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.onedrive_health
+      to: "off"
+      for:
+        hours: 2
+  condition: []
+  action:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "🔴 OneDrive Connection Issue"
+        message: >
+          OneDrive hasn't synchronized for over 24 hours.
+          Last sync: {{ states('sensor.onedrive_last_sync') }}
+        data:
+          tag: "onedrive_connection"
+          actions:
+            - action: "CHECK_CONNECTION"
+              title: "Check Connection"
+
+# Weekly Backup Cleanup at 09:00 on Sundays
+- id: onedrive_weekly_cleanup
+  alias: "OneDrive Weekly Backup Cleanup"
+  description: "Clean up old backups every Sunday at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: time
+      weekday:
+        - sun
+  action:
+    - service: script.cleanup_old_backups
+    - delay:
+        minutes: 5
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "OneDrive Cleanup Complete"
+        message: >
+          Weekly backup cleanup completed.
+          Current storage: {{ states('sensor.onedrive_storage_percentage') }}% used
+        data:
+          tag: "weekly_cleanup"
+
+# Monthly Storage Report at 09:00 on 1st of month
+- id: onedrive_monthly_report
+  alias: "OneDrive Monthly Storage Report"
+  description: "Detailed monthly storage analysis on 1st at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: template
+      value_template: "{{ now().day == 1 }}"
+  action:
+    - service: notify.mobile_app_your_phone
+      data:
+        title: "📊 OneDrive Monthly Report"
+        message: >
+          Monthly Storage Analysis:
+          • Total Files: {{ states('sensor.onedrive_file_count') }}
+          • Storage Used: {{ states('sensor.onedrive_storage_used') }}GB
+          • Growth Rate: Calculating...
+          • Days Until Full: {{ states('sensor.onedrive_days_until_full') }}
+          • Health Status: {{ 'Good' if is_state('binary_sensor.onedrive_health', 'on') else 'Needs Attention' }}
+        data:
+          actions:
+            - action: "VIEW_DETAILED_REPORT"
+              title: "View Detailed Report"

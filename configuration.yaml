@@ -1,11 +1,88 @@
-
+#===============================================================================
+# Home Assistant Main Configuration
+# File: configuration.yaml
+# Updated: 2025-08-22
+# Note: Sensors moved to packages/integration_sensors.yaml
+#===============================================================================
 # Loads default set of integrations. Do not remove.
 default_config:
-
+#-------------------------------------------------------------------------------
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
-
+#-------------------------------------------------------------------------------
+# Enable the recorder for long-term statistics (works with InfluxDB)
+recorder:
+  purge_keep_days: 7
+  include:
+    domains:
+      - sensor
+      - binary_sensor
+      - switch
+      - light
+      - climate
+      - person
+      - device_tracker
+  exclude:
+    entities:
+      - sensor.date_time
+      - sensor.time
+#-------------------------------------------------------------------------------
+# History configuration
+history:
+  include:
+    domains:
+      - sensor
+      - binary_sensor
+      - switch
+      - light
+      - climate
+#-------------------------------------------------------------------------------
+# Logger configuration for debugging
+logger:
+  default: info
+  logs:
+    homeassistant.components.mqtt: debug
+    homeassistant.components.tuya: debug
+    custom_components: debug
+#-------------------------------------------------------------------------------
+# HTTP configuration for external access
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.1.0/24  
+# HTTP Configuration
+  cors_allowed_origins:
+    - "http://localhost"
+    - "http://127.0.0.1"
+    - "http://192.168.1.30"
+  use_x_frame_options: false    
+#-------------------------------------------------------------------------------
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
+template: !include template.yaml
+group: !include groups.yaml
+#-------------------------------------------------------------------------------
+ # Shell Commands
+shell_command:
+  git_commit: '/config/scripts/git_commit.sh'
+  export_sensor_list: >
+    bash -c "hass-cli entity list | grep ^sensor."
+  restart_deye_integration: >
+    curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/json" \
+    http://localhost:8123/api/config/config_entries/reload
+  backup_config: >
+    cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)
+  check_entity_status: >
+    bash -c "hass-cli entity list | grep -E '(unknown|unavailable)'"
+#-------------------------------------------------------------------------------
+# Notification groups for easier management
+notify:
+  - name: family_devices
+    platform: group
+    services:
+      - service: mobile_app_your_phone
+      - service: mobile_app_spouse_phone
+#-------------------------------------------------------------------------------

@@ -1,1 +1,23 @@
-[]
+#===============================================================================
+# Temporary Entity Discovery Automation
+# Add this to automations.yaml temporarily to identify all entities
+#===============================================================================
+- id: discover_entities
+  alias: "Discover All Entities"
+  description: "Temporary automation to discover all available entities at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition: []
+  action:
+    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      data:
+        title: "Entity Discovery"
+        message: >
+          Available OneDrive entities:
+          {{ states.sensor | selectattr('entity_id', 'match', '.*onedrive.*') | map(attribute='entity_id') | list }}
+          
+          Available binary sensors:
+          {{ states.binary_sensor | selectattr('entity_id', 'match', '.*onedrive.*') | map(attribute='entity_id') | list }}
+        data:
+          tag: "entity_discovery"
