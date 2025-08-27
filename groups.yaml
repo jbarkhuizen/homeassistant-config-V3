@@ -1,9 +1,5 @@
-#===============================================================================
 # Groups Configuration
 # Groups help organize entities and create logical collections
-#===============================================================================
-
-# Added with Claude.ai on 27 Aug 2025
 
 # All lights group
 all_lights:
@@ -62,16 +58,29 @@ tuya_devices:
     # - switch.tuya_plug_1
     # - light.tuya_bulb_1
 
-# OneDrive monitoring group
+# OneDrive monitoring group (Updated with working entities only)
 onedrive_monitoring:
   name: "OneDrive Monitoring"
   entities:
-    - sensor.onedrive_storage_percentage
-    - sensor.onedrive_storage_remaining
-    - sensor.onedrive_storage_status
-    - sensor.onedrive_days_until_full
-    - binary_sensor.onedrive_storage_warning
-    - binary_sensor.onedrive_health
+    # Working OneDrive entities
+    - sensor.onedrive_used_storage
+    - sensor.onedrive_total_available_storage
+    - sensor.onedrive_remaining_storage
+    - sensor.onedrive_drive_state
+    # Template sensors (will work after restart)
+    - sensor.onedrive_storage_percentage_calculated
+    - sensor.onedrive_storage_status_enhanced
+    - sensor.onedrive_days_until_full_calculated
+    - sensor.onedrive_connection_summary
+    - sensor.onedrive_storage_health_score
+    - binary_sensor.onedrive_storage_warning_calculated
+    - binary_sensor.onedrive_health_calculated
+    - binary_sensor.onedrive_storage_critical_alert
+    # Scripts
+    - script.create_onedrive_backup
+    - script.force_onedrive_sync
+    - script.onedrive_health_check
+    - script.onedrive_diagnostic_check
 
 # System health monitoring
 system_health:
