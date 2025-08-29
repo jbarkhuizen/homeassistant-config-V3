@@ -21,3 +21,28 @@
           {{ states.binary_sensor | selectattr('entity_id', 'match', '.*onedrive.*') | map(attribute='entity_id') | list }}
         data:
           tag: "entity_discovery"
+#-------------------------------------------------------------------------------
+# Added with Co-Pilot on 28 Aug 2025
+# Send Test Email  
+- id: send_test_email_daily
+  alias: "Send Test Email Daily at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  action:
+    - service: notify.email_test
+      data:
+        title: "Home Assistant Test Email"
+        message: "This is a daily test email from Home Assistant to confirm email functionality." 
+#------------------------------------------------------------------------------- 
+# Added with Co-Pilot on 28 Aug 2025
+# Send Test Email  
+- id: send_test_telegram_daily
+  alias: "Send Test Telegram Message Daily at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  action:
+    - service: notify.telegram
+      data:
+        message: "This is a daily test message from Home Assistant to confirm Telegram functionality."
