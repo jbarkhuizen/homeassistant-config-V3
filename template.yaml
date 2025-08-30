@@ -1,6 +1,8 @@
-# Ultra-Simple Template - Guaranteed to Work
-# Replace your entire template.yaml with this
+#===============================================================================
+# Sensors
+#===============================================================================
 
+#OneDrive Sensors
 - sensor:
     # Hardcoded percentage (will work 100%)
     - name: "OneDrive Usage Percentage"
@@ -14,7 +16,24 @@
       unique_id: onedrive_status_simple
       icon: "mdi:cloud"
       state: "{{ states('sensor.onedrive_drive_state') }}"
+#-------------------------------------------------------------------------------
+#Johanba-Sensors
+# Added with Claude.ai on 30 Aug 2025
+    - name: "Johanba Server CPU Temperature Numeric"
+      unique_id: johanba_server_cpu_temperature_numeric
+      unit_of_measurement: "°C"
+      state: >
+          {% if states('sensor.johanba_server_cpu_temperature')|float(0) > 0 %}
+            {{ states('sensor.johanba_server_cpu_temperature')|float }}
+          {% else %}
+            0
+          {% endif %}
+#-------------------------------------------------------------------------------
 
+
+#===============================================================================
+# Binary Sensors
+#===============================================================================
 - binary_sensor:
     # Simple alert
     - name: "OneDrive Storage Alert Simple"
@@ -27,3 +46,4 @@
       unique_id: onedrive_health_simple
       icon: "mdi:cloud-check"
       state: "true"
+#----------------------------------------------------------------------------------

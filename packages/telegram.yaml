@@ -1,58 +1,200 @@
 #===============================================================================
-# Telegram Integration Package - Fixed
+# Telegram Integration Package - Complete Fix
 # File: packages/telegram.yaml
-# Created: 2025-08-22
-# Purpose: Configure Telegram bot and notifications
-# Note: input_boolean entities are defined in helpers.yaml
+# Updated: 2025-08-29
+# Purpose: Configure Telegram bot and notifications with proper error handling
 #===============================================================================
 
-# Removed as it was incorporated in the UI
-# Telegram Bot Configuration
-#telegram_bot:
-#  - platform: polling
-#    api_key: !secret telegram_bot_token
-#    allowed_chat_ids:
-#      - !secret telegram_chat_id
+# Telegram Bot Configuration - UNCOMMENTED AND ACTIVE
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_bot_token
+    allowed_chat_ids:
+      - !secret telegram_chat_id
 
 # Telegram Notification Service
 notify:
   - name: telegram
     platform: telegram
     chat_id: !secret telegram_chat_id
+    api_key: !secret telegram_bot_token
 
-# Template sensor for Telegram bot status
+# Template sensors for monitoring Telegram status
 template:
   - binary_sensor:
       - name: "Telegram Bot Connected"
+        unique_id: telegram_bot_connected
         state: >
-          {{ states('sensor.telegram_bot') not in ['unknown', 'unavailable'] }}
+          {% set bot_state = states('sensor.telegram_bot') %}
+          {{ bot_state not in ['unknown', 'unavailable', 'none'] }}
         icon: >
           {% if is_state('binary_sensor.telegram_bot_connected', 'on') %}
             mdi:telegram
           {% else %}
             mdi:telegram-off
           {% endif %}
+        availability: >
+          {{ states('sensor.telegram_bot') != 'unavailable' }}
 
-# Test automation to verify Telegram works
+  - sensor:
+      - name: "Telegram Connection Status"
+        unique_id: telegram_connection_status
+        state: >
+          {% if is_state('binary_sensor.telegram_bot_connected', 'on') %}
+            Connected
+          {% elif states('sensor.telegram_bot') == 'unavailable' %}
+            Unavailable
+          {% elif states('sensor.telegram_bot') == 'unknown' %}
+            Unknown
+          {% else %}
+            Disconnected
+          {% endif %}
+        icon: "mdi:telegram"
+
+# Enhanced automations with error handling
 automation:
-  - id: 'telegram_test_connection'
+  - id: 'telegram_test_connection_startup'
     alias: 'Telegram: Test Connection at Startup'
-    description: 'Test Telegram connection when Home Assistant starts'
+    description: 'Test Telegram connection when Home Assistant starts with error handling'
     trigger:
       - platform: homeassistant
         event: start
+    condition:
+      - condition: template
+        value_template: "{{ states('input_boolean.telegram_notifications_enabled') == 'on' }}"
     action:
-      - delay: '00:01:00'  # Wait 1 minute after startup
-      - condition: state
-        entity_id: input_boolean.telegram_notifications_enabled
-        state: 'on'
-      - service: notify.telegram
+      - delay: '00:02:00'  # Wait 2 minutes after startup for integrations to load
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('binary_sensor.telegram_bot_connected') == 'on' }}"
+            sequence:
+              - service: notify.telegram
+                data:
+                  title: "🏠 Home Assistant Started"
+                  message: >
+                    ✅ Home Assistant has started successfully!
+                    
+                    🤖 Telegram Bot: Online
+                    📱 Notifications: Enabled
+                    ⏰ Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+                    🌐 IP: 192.168.1.30:8123
+                    
+                    All systems operational! 🚀
+        default:
+          - service: persistent_notification.create
+            data:
+              title: "Telegram Bot Connection Failed"
+              message: >
+                Telegram bot failed to connect at startup.
+                Please check your bot token and chat ID in secrets.yaml
+              notification_id: telegram_startup_failed
+
+  - id: 'telegram_daily_test_enhanced'
+    alias: 'Telegram: Daily Test Message at 09:00'
+    description: 'Enhanced daily test with connection verification'
+    trigger:
+      - platform: time
+        at: "09:00:00"
+    condition:
+      - condition: template
+        value_template: "{{ states('input_boolean.telegram_notifications_enabled') == 'on' }}"
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('binary_sensor.telegram_bot_connected') == 'on' }}"
+            sequence:
+              - service: notify.telegram
+                data:
+                  title: "🌅 Daily System Check"
+                  message: >
+                    Good morning! Daily system status:
+                    
+                    📡 Telegram: {{ states('sensor.telegram_connection_status') }}
+                    🏠 Home Assistant: {{ states('sensor.home_assistant_uptime') }}
+                    ☁️ OneDrive: {{ states('sensor.onedrive_drive_state') | title }}
+                    ⚡ System: All systems operational
+                    
+                    📊 Quick Stats:
+                    • Storage: {{ states('sensor.onedrive_storage_percentage_calculated') }}% used
+                    • Uptime: {{ states('sensor.home_assistant_uptime') }}
+                    
+                    Have a great day! ☕️
+        default:
+          - service: persistent_notification.create
+            data:
+              title: "Daily Telegram Test Failed"
+              message: >
+                Daily Telegram test could not be sent.
+                Bot status: {{ states('sensor.telegram_connection_status') }}
+              notification_id: telegram_daily_failed
+
+  - id: 'telegram_connection_monitor'
+    alias: 'Telegram: Connection Monitor'
+    description: 'Monitor Telegram bot connection and alert on failures'
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.telegram_bot_connected
+        to: 'off'
+        for:
+          minutes: 30
+    condition:
+      - condition: template
+        value_template: "{{ states('input_boolean.telegram_notifications_enabled') == 'on' }}"
+    action:
+      - service: persistent_notification.create
         data:
-          title: "🏠 Home Assistant Started"
+          title: "⚠️ Telegram Bot Disconnected"
           message: >
-            Home Assistant has started successfully!
+            Telegram bot has been disconnected for 30 minutes.
             
-            Telegram notifications are working.
-            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Status: {{ states('sensor.telegram_connection_status') }}
             
-            ✅ System Online
+            Please check:
+            1. Bot token in secrets.yaml
+            2. Internet connection
+            3. Telegram bot status with @BotFather
+          notification_id: telegram_connection_lost
+      - service: system_log.write
+        data:
+          message: "Telegram bot connection lost - Status: {{ states('sensor.telegram_connection_status') }}"
+          level: warning
+
+# Script for manual Telegram testing
+script:
+  test_telegram_connection:
+    alias: "Test Telegram Connection"
+    description: "Manually test Telegram bot connection"
+    sequence:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('binary_sensor.telegram_bot_connected') == 'on' }}"
+            sequence:
+              - service: notify.telegram
+                data:
+                  title: "🧪 Manual Test"
+                  message: >
+                    Manual Telegram test successful!
+                    
+                    ✅ Bot Status: Connected
+                    ⏰ Test Time: {{ now().strftime('%H:%M:%S') }}
+                    📡 Connection: {{ states('sensor.telegram_connection_status') }}
+                    
+                    All systems go! 🚀
+              - service: persistent_notification.create
+                data:
+                  title: "✅ Telegram Test Successful"
+                  message: "Manual Telegram test completed successfully"
+                  notification_id: telegram_test_success
+        default:
+          - service: persistent_notification.create
+            data:
+              title: "❌ Telegram Test Failed"
+              message: >
+                Telegram test failed.
+                Bot status: {{ states('sensor.telegram_connection_status') }}
+                
+                Check your configuration and try again.
+              notification_id: telegram_test_failed
