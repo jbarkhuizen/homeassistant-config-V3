@@ -11,6 +11,15 @@ default_config:
 frontend:
   themes: !include_dir_merge_named themes
 #-------------------------------------------------------------------------------
+# Text to speech default config
+tts:
+  - platform: google_translate  
+
+#-------------------------------------------------------------------------------  
+
+
+
+#-------------------------------------------------------------------------------
 # Enable the recorder for long-term statistics (works with InfluxDB)
 recorder:
   purge_keep_days: 7
@@ -58,27 +67,32 @@ http:
     - "http://192.168.1.30"
   use_x_frame_options: false    
 #-------------------------------------------------------------------------------
-# Enable packages
-homeassistant:
-  packages: !include_dir_named packages
+
 #-------------------------------------------------------------------------------
-#automation: !include automations.yaml
+automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 template: !include template.yaml
 group: !include groups.yaml
+
+# Packages Configuration - Load all packages
+homeassistant: 
+  packages: !include_dir_named packages
+
+
 #-------------------------------------------------------------------------------
  # Shell Commands
 shell_command:
   git_commit: '/config/scripts/git_commit.sh'
-  export_sensor_list: >
-    bash -c "hass-cli entity list | grep ^sensor."
+# Commented out, seem to be probematic  
+#  export_sensor_list: >
+#    bash -c "hass-cli entity list | grep ^sensor."
   restart_deye_integration: >
     curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
     -H "Content-Type: application/json" \
     http://localhost:8123/api/config/config_entries/reload
   backup_config: >
-    cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)
+    cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)  
   extract_sensors: >
     python3 /config/scripts/extract_sensors.py
   check_system_status: >
