@@ -1,0 +1,49 @@
+#===============================================================================
+# Email Notifications Configuration - Clean Version
+# File: /config/packages/email_notifications.yaml
+# Purpose: Gmail SMTP email notifications (no startup automation)
+#===============================================================================
+
+notify:
+  # Primary email service for Home Assistant notifications
+  - name: email_ha
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: jbarkhuizen@gmail.com
+    encryption: starttls
+    username: jbarkhuizen@gmail.com
+    password: !secret gmail_app_password
+    recipient: jbarkhuizen@gmail.com
+    sender_name: "Home Assistant"
+
+  # Email service for sensor reports
+  - name: email_sensors
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: jbarkhuizen@gmail.com
+    encryption: starttls
+    username: jbarkhuizen@gmail.com
+    password: !secret gmail_app_password
+    recipient: jbarkhuizen@gmail.com
+    sender_name: "HA Sensor Reports"
+
+# Manual test script (no automatic startup email)
+script:
+  test_email_basic:
+    alias: "Test Email Connection"
+    sequence:
+      - service: notify.email_ha
+        data:
+          title: "📧 Home Assistant Email Test"
+          message: |
+            Email test from Home Assistant
+            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            
+            If you receive this email, your email integration is working correctly!
+            
+            System: 192.168.1.30:8123
+            Service: notify.email_ha
