@@ -58,6 +58,10 @@ http:
     - "http://192.168.1.30"
   use_x_frame_options: false    
 #-------------------------------------------------------------------------------
+# Enable packages
+homeassistant:
+  packages: !include_dir_named packages
+#-------------------------------------------------------------------------------
 #automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
