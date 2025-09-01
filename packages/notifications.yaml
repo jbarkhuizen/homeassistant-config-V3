@@ -1,0 +1,159 @@
+#===============================================================================
+# Consolidated Notifications Configuration - FINAL
+# File: /config/packages/notifications_consolidated.yaml
+# Purpose: All notification services consolidated to avoid conflicts
+#===============================================================================
+
+notify:
+  # Email services (confirmed working)
+  - name: email_ha
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: jbarkhuizen@gmail.com
+    encryption: starttls
+    username: jbarkhuizen@gmail.com
+    password: !secret gmail_app_password
+    recipient: jbarkhuizen@gmail.com
+    sender_name: "Home Assistant"
+
+  - name: email_sensors
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: jbarkhuizen@gmail.com
+    encryption: starttls
+    username: jbarkhuizen@gmail.com
+    password: !secret gmail_app_password
+    recipient: jbarkhuizen@gmail.com
+    sender_name: "HA Sensor Reports"
+
+  - name: email_alerts
+    platform: smtp
+    server: smtp.gmail.com
+    port: 587
+    timeout: 15
+    sender: jbarkhuizen@gmail.com
+    encryption: starttls
+    username: jbarkhuizen@gmail.com
+    password: !secret gmail_app_password
+    recipient: jbarkhuizen@gmail.com
+    sender_name: "HA Alert System"
+
+  # Telegram service (restored from your original config)
+  - name: telegram
+    platform: telegram
+    chat_id: !secret telegram_chat_id
+
+  # Family device group (restored from your original config)
+  - name: family_devices
+    platform: group
+    services:
+      - service: mobile_app_your_phone
+      - service: mobile_app_spouse_phone
+
+# Telegram Bot Configuration (restored from original telegram.yaml)
+# Note: If you set up Telegram via UI, you can comment this out
+#telegram_bot:
+#  - platform: polling
+#    api_key: !secret telegram_bot_token
+#    allowed_chat_ids:
+#      - !secret telegram_chat_id
+
+# Template sensor for Telegram bot status (restored from original)
+template:
+  - binary_sensor:
+      - name: "Telegram Bot Connected"
+        state: >
+          {{ states('sensor.telegram_bot') not in ['unknown', 'unavailable'] }}
+        icon: >
+          {% if is_state('binary_sensor.telegram_bot_connected', 'on') %}
+            mdi:telegram
+          {% else %}
+            mdi:telegram-off
+          {% endif %}
+
+# Email test scripts (keep for ongoing testing)
+script:
+  # Basic email test
+  test_email_basic:
+    alias: "Test Email - Basic"
+    sequence:
+      - service: notify.email_ha
+        data:
+          title: "📧 Email Basic Test"
+          message: |
+            Email basic test - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Service: notify.email_ha
+            Status: ✅ Working
+
+  # Sensor email test
+  test_email_sensors:
+    alias: "Test Email - Sensor Reports"
+    sequence:
+      - service: notify.email_sensors
+        data:
+          title: "📊 Sensor Email Test"
+          message: |
+            Sensor email test - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Service: notify.email_sensors
+            Purpose: Daily sensor reports
+            Status: ✅ Ready for automation
+
+  # Test all email services
+  test_all_email_services:
+    alias: "Test All Email Services"
+    sequence:
+      - service: notify.email_ha
+        data:
+          title: "Test 1/3: Primary Email"
+          message: "Testing email_ha service - {{ now().strftime('%H:%M:%S') }}"
+      - delay: 5
+      - service: notify.email_sensors
+        data:
+          title: "Test 2/3: Sensor Reports"
+          message: "Testing email_sensors service - {{ now().strftime('%H:%M:%S') }}"
+      - delay: 5
+      - service: notify.email_alerts
+        data:
+          title: "Test 3/3: Alert System"
+          message: "Testing email_alerts service - {{ now().strftime('%H:%M:%S') }}"
+
+  # Telegram test script
+  test_telegram_basic:
+    alias: "Test Telegram - Basic"
+    sequence:
+      - service: notify.telegram
+        data:
+          title: "📱 Telegram Test"
+          message: |
+            Telegram test - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Service: notify.telegram
+            Status: ✅ Working
+
+# Test automation for Telegram (from your original config)
+automation:
+  - id: 'telegram_test_connection'
+    alias: 'Telegram: Test Connection at Startup'
+    description: 'Test Telegram connection when Home Assistant starts'
+    trigger:
+      - platform: homeassistant
+        event: start
+    condition:
+      # Only run if input_boolean exists, otherwise skip condition
+      - condition: template
+        value_template: "{{ states('input_boolean.telegram_notifications_enabled') in ['on', 'unknown'] }}"
+    action:
+      - delay: '00:01:00'
+      - service: notify.telegram
+        data:
+          title: "🏠 Home Assistant Started"
+          message: >
+            Home Assistant has started successfully!
+            
+            Telegram notifications are working.
+            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            
+            ✅ System Online

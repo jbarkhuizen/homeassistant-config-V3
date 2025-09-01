@@ -102,11 +102,5 @@ shell_command:
     -H "Content-Type: application/json" \
     http://localhost:8123/api/services/homeassistant/restart
 #-------------------------------------------------------------------------------
-# Notification groups for easier management
-notify:
-  - name: family_devices
-    platform: group
-    services:
-      - service: mobile_app_your_phone
-      - service: mobile_app_spouse_phone
+
 #-------------------------------------------------------------------------------
