@@ -77,6 +77,8 @@ shell_command:
     cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)
   check_entity_status: >
     bash -c "hass-cli entity list | grep -E '(unknown|unavailable)'"
+  extract_sensors: >
+    python3 /config/scripts/extract_sensors.py
 #-------------------------------------------------------------------------------
 # Notification groups for easier management
 notify:

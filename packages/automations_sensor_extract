@@ -1,0 +1,22 @@
+- id: extract_sensors_daily
+  alias: "Extract Sensors Daily Report"
+  description: "Generate daily sensor extraction report at 09:00"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition: []
+  action:
+    - service: shell_command.extract_sensors
+      data: {}
+    - delay:
+        seconds: 30
+    - service: notify.telegram
+      data:
+        title: "📊 Sensor Report Generated"
+        message: >
+          Daily sensor extraction completed!
+          
+          📈 Report generated at: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+          📁 Location: /config/sensor_reports/
+          
+          Check your reports folder for detailed CSV, JSON, and summary files.
