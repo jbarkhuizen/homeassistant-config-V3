@@ -58,7 +58,7 @@ http:
     - "http://192.168.1.30"
   use_x_frame_options: false    
 #-------------------------------------------------------------------------------
-automation: !include automations.yaml
+#automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 template: !include template.yaml
