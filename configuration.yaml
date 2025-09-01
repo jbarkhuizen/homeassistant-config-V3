@@ -75,10 +75,14 @@ shell_command:
     http://localhost:8123/api/config/config_entries/reload
   backup_config: >
     cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)
-  check_entity_status: >
-    bash -c "hass-cli entity list | grep -E '(unknown|unavailable)'"
   extract_sensors: >
     python3 /config/scripts/extract_sensors.py
+  check_system_status: >
+    echo "System check at $(date)" > /config/system_check.log
+  restart_homeassistant: >
+    curl -X POST -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZWMzOTNlMWE3Mjc0ZTRmYTJkYjY2YmI3NDBlZjNjNiIsImlhdCI6MTc1NjcxNzY4MSwiZXhwIjoyMDcyMDc3NjgxfQ.Lw958tdXTVp23-EAh-36EjpeMV_jtB9cnX0_M3mTDl8" \
+    -H "Content-Type: application/json" \
+    http://localhost:8123/api/services/homeassistant/restart
 #-------------------------------------------------------------------------------
 # Notification groups for easier management
 notify:
