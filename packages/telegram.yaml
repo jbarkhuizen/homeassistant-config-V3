@@ -17,15 +17,13 @@ notify:
   - platform: telegram
     name: telegram
     api_key: !secret telegram_bot_token
-    allowed_chat_ids:
-      - !secret telegram_chat_id
+    chat_id: !secret telegram_chat_id
     
   # Telegram service with specific formatting
   - platform: telegram
     name: telegram
     api_key: !secret telegram_bot_token
-    allowed_chat_ids:
-      - !secret telegram_chat_id
+    chat_id: !secret telegram_chat_id
     parse_mode: markdown
 
 # Telegram-specific scripts with better formatting
