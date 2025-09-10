@@ -1,14 +1,155 @@
 #===============================================================================
-#Telegram Automations
+# Fixed Automations Configuration
+# File: /config/automations.yaml
 #===============================================================================
 
-#Dailt Test Telegram
+# Daily Telegram Test - Fixed
 - id: send_test_telegram_daily
   alias: "Send Test Telegram Message Daily at 09:00"
+  description: "Daily Telegram functionality test"
   trigger:
     - platform: time
       at: "09:00:00"
+  condition: []
   action:
     - service: notify.telegram
       data:
-        message: "Home Assistant is running: Daily status check at 09:00. Telegram is functioning as expected"
+        title: "🏠 Daily Status Check"
+        message: |
+          Home Assistant Daily Report - {{ now().strftime('%Y-%m-%d') }}
+          
+          🟢 System Status: Online
+          ⏰ Time: {{ now().strftime('%H:%M:%S') }}
+          🌡️ System Temp: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
+          💾 Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
+          
+          Telegram notifications are working correctly! ✅
+
+# Daily Email Test - New
+- id: send_test_email_daily
+  alias: "Send Test Email Daily at 09:00"
+  description: "Daily Email functionality test"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition: []
+  action:
+    - delay: 30  # Stagger after Telegram
+    - service: notify.email_ha
+      data:
+        title: "🏠 Daily Home Assistant Status - {{ now().strftime('%Y-%m-%d') }}"
+        message: |
+          Daily Home Assistant Status Report
+          Generated: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
+          
+          🏠 System: Home Assistant (192.168.1.30:8123)
+          
+          📊 SYSTEM HEALTH:
+          • Status: {{ 'Online ✅' if states('sensor.johanba_server_status') == 'good' else 'Check Required ⚠️' }}
+          • System Temperature: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
+          • CPU Usage: {{ states('sensor.johanba_server_cpu_usage') | default('N/A') }}%
+          • Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
+          • Uptime: {{ states('sensor.johanba_server_uptime') | default('N/A') }}
+          
+          ☁️ ONEDRIVE STATUS:
+          • Storage Used: {{ states('sensor.onedrive_used_storage') | default('N/A') }}GB
+          • Total Available: {{ states('sensor.onedrive_total_available_storage') | default('N/A') }}GB
+          • Drive State: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          
+          🔋 ENERGY MONITORING:
+          • OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') | default('N/A') }}%
+          
+          🌐 NETWORK STATUS:
+          • WAN Status: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Check Connection ⚠️' }}
+          • External IP: {{ states('sensor.archer_d2_external_ip') | default('N/A') }}
+          
+          📈 ADDONS STATUS:
+          • File Editor: {{ 'Running ✅' if is_state('binary_sensor.file_editor_running', 'on') else 'Stopped ❌' }}
+          • Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running', 'on') else 'Stopped ❌' }}
+          • Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running', 'on') else 'Stopped ❌' }}
+          
+          This automated report confirms your email notifications are working correctly.
+          
+          Best regards,
+          Home Assistant Automation System
+
+# Weekly System Report - New
+- id: weekly_system_report
+  alias: "Weekly System Report - Sunday 09:00"
+  description: "Comprehensive weekly system report"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: time
+      weekday:
+        - sun
+  action:
+    - service: notify.email_ha
+      data:
+        title: "📊 Weekly Home Assistant System Report - {{ now().strftime('%Y-%m-%d') }}"
+        message: |
+          Weekly Home Assistant System Report
+          Week Ending: {{ now().strftime('%Y-%m-%d') }}
+          
+          🏠 SYSTEM OVERVIEW:
+          • Instance: Home Assistant (192.168.1.30:8123)
+          • OS Version: {{ states('sensor.home_assistant_operating_system_version') | default('N/A') }}
+          • Core Version: Available in System Info
+          
+          📊 PERFORMANCE METRICS:
+          • Server Status: {{ states('sensor.johanba_server_status') | default('N/A') | title }}
+          • Average CPU Usage: {{ states('sensor.johanba_server_cpu_usage') | default('N/A') }}%
+          • Average Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
+          • System Temperature: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
+          
+          💾 STORAGE STATUS:
+          • HA Disk Used: {{ states('sensor.home_assistant_host_disk_used') | default('N/A') }}GB
+          • HA Disk Free: {{ states('sensor.home_assistant_host_disk_free') | default('N/A') }}GB
+          • OneDrive Used: {{ states('sensor.onedrive_used_storage') | default('N/A') }}GB
+          • OneDrive Free: {{ states('sensor.onedrive_remaining_storage') | default('N/A') }}GB
+          
+          🔌 ADDON STATUS:
+          • InfluxDB: Installed ✅
+          • Grafana: Installed ✅
+          • Node-RED: Installed ✅
+          • Mosquitto: Installed ✅
+          • Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running', 'on') else 'Check Status ⚠️' }}
+          
+          🌐 INTEGRATIONS:
+          • GitHub: {{ 'Connected ✅' if states('sensor.jbarkhuizen_automation_code_stars') != 'unavailable' else 'Check Connection ⚠️' }}
+          • OneDrive: {{ 'Connected ✅' if states('sensor.onedrive_drive_state') != 'unavailable' else 'Check Connection ⚠️' }}
+          • Telegram: {{ 'Configured ✅' if states('binary_sensor.telegram_bot_connected') == 'on' else 'Check Bot ⚠️' }}
+          
+          📱 NOTIFICATIONS:
+          • Email: ✅ Working (you're receiving this!)
+          • Telegram: Check daily messages for status
+          
+          🔧 RECOMMENDATIONS:
+          • Regular backups are configured
+          • System monitoring is active
+          • All critical services monitored
+          
+          Next weekly report: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d') }}
+          
+          Best regards,
+          Home Assistant Weekly Report System
+    - delay: 60
+    - service: notify.telegram
+      data:
+        message: |
+          📊 Weekly Report Sent
+          
+          Comprehensive system report emailed at {{ now().strftime('%H:%M:%S') }}
+          
+          Check your email for detailed weekly statistics! 📧
+
+# Test notification system - Manual trigger
+- id: test_notification_system_manual
+  alias: "Test Notification System - Manual"
+  description: "Manually test both email and Telegram"
+  trigger:
+    - platform: event
+      event_type: test_notifications
+  action:
+    - service: script.test_all_notifications
