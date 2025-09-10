@@ -99,3 +99,73 @@ onedrive_health_check:
               title: "View Dashboard"
             - action: "FORCE_SYNC"
               title: "Force Sync"
+
+# Add these scripts to your scripts.yaml file
+
+# Immediate Telegram Test
+test_telegram_now:
+  alias: "Test Telegram Right Now"
+  sequence:
+    - service: notify.telegram
+      data:
+        title: "🔧 Telegram Test"
+        message: |
+          Telegram test at {{ now().strftime('%H:%M:%S') }}
+          
+          If you receive this message, your Telegram bot is working! ✅
+          
+          System: Home Assistant (192.168.1.30:8123)
+          Status: All systems operational
+
+# Telegram System Status
+telegram_system_status:
+  alias: "Telegram System Status"
+  sequence:
+    - service: notify.telegram
+      data:
+        title: "📊 System Status"
+        message: |
+          🏠 Home Assistant Status Report
+          Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+          
+          🖥️ SERVER STATUS:
+          • Status: {{ states('sensor.johanba_server_status') | title }}
+          • Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
+          • CPU Usage: {{ states('sensor.johanba_server_cpu_usage') }}%
+          • Memory: {{ states('sensor.johanba_server_memory_usage') }}%
+          
+          ☁️ ONEDRIVE:
+          • Used: {{ states('sensor.onedrive_used_storage') }}GB
+          • Free: {{ states('sensor.onedrive_remaining_storage') }}GB
+          • Status: {{ states('sensor.onedrive_drive_state') | title }}
+          
+          🌐 NETWORK:
+          • WAN: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected ❌' }}
+          • IP: {{ states('sensor.archer_d2_external_ip') }}
+          
+          All systems monitored! 🎯
+
+# Telegram with photo (if you want to test media)
+telegram_test_with_photo:
+  alias: "Telegram Test with System Info"
+  sequence:
+    - service: notify.telegram
+      data:
+        title: "📱 Advanced Telegram Test"
+        message: |
+          🏠 Home Assistant Advanced Test
+          
+          This message tests formatting:
+          
+          *Bold Text*
+          _Italic Text_
+          `Code Text`
+          
+          🔹 Bullet points work
+          🔹 Emojis work ✅
+          🔹 Multiple lines work
+          
+          System IP: {{ states('sensor.archer_d2_external_ip') }}
+          Time: {{ now().strftime('%H:%M:%S') }}
+          
+          If you can read this formatted message, everything is perfect! 🎉              
