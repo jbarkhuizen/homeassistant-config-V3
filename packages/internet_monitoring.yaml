@@ -547,7 +547,7 @@ automation:
             • Last Speed Test: {{ states.sensor.cloudflare_speed_test_25mb_down.last_updated.strftime('%Y-%m-%d %H:%M:%S') if states.sensor.cloudflare_speed_test_25mb_down.last_updated else 'Unknown' }}
             
             System: Home Assistant @ 192.168.1.30:8123
-            Location: Middelburg, Mpumalanga, South Africa
+            Location: Pierre van Ryneveld, Gauteng, South Africa
 
   # Disconnection alerts with immediate notification
   - id: metrofibre_disconnection_alert
@@ -712,7 +712,7 @@ automation:
             • Complaint Mode: {{ 'ACTIVE' if is_state('input_boolean.metrofibre_complaint_mode', 'on') else 'Inactive' }}
             
             📍 LOCATION & SYSTEM:
-            • Location: Middelburg, Mpumalanga, South Africa
+            • Location: Pierre van Ryneveld, Gauteng, South Africa
             • Home Assistant: 192.168.1.30:8123
             • Router IP: 192.168.1.1
             • Provider: Metrofibre (Fiber)

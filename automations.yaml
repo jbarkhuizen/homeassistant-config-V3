@@ -279,7 +279,7 @@
         message: |
           🏠 SMART HOME DAILY REPORT
           Generated: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
-          Location: Middelburg, Mpumalanga (192.168.1.30:8123)
+          Location: Pierre van Ryneveld, Gauteng (192.168.1.30:8123)
           
           ⚡ ENERGY SYSTEM STATUS:
           • Combined Solar: {{ states('sensor.combined_solar_generation') }}W
