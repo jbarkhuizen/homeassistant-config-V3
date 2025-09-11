@@ -153,3 +153,94 @@
 #      event_type: test_notifications
 #  action:
 #    - service: script.test_all_notifications
+#
+#===============================================================================
+# Home Assistant Startup Email - Modern Syntax
+# Add this to your automations.yaml file
+#===============================================================================
+
+- id: startup_email_notification
+  alias: Home Assistant Startup Email
+  description: Send comprehensive email when HA starts
+  triggers:
+    - trigger: homeassistant
+      event: start
+  actions:
+    - delay:
+        minutes: 2
+    - action: notify.email_ha
+      data:
+        title: "🏠 Home Assistant Startup Complete - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+        message: |
+          Home Assistant Startup Notification
+          ====================================
+          
+          🕐 RESTART DETAILS:
+          • Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
+          • Server: 192.168.1.30:8123
+          • Previous Uptime: {{ relative_time(states.sensor.last_boot.last_changed) if states('sensor.last_boot') != 'unavailable' else 'Unknown' }}
+          
+          🖥️ SYSTEM STATUS:
+          • Home Assistant Core: {{ states('sensor.home_assistant_core_cpu_percent') | default('N/A') }}% CPU
+          • Supervisor: {{ states('sensor.home_assistant_supervisor_cpu_percent') | default('N/A') }}% CPU
+          • System Temperature: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
+          • Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
+          • Server Status: {{ states('sensor.johanba_server_status') | default('N/A') | title }}
+          
+          📊 VERSION INFORMATION:
+          • HA OS Version: {{ states('sensor.home_assistant_operating_system_version') | default('N/A') }}
+          • Latest Available: {{ states('sensor.home_assistant_operating_system_newest_version') | default('N/A') }}
+          • Update Available: {{ 'Yes ⚠️' if states('sensor.home_assistant_operating_system_version') != states('sensor.home_assistant_operating_system_newest_version') else 'No ✅' }}
+          
+          🔌 ADDON STATUS:
+          • File Editor: {{ 'Running ✅' if is_state('binary_sensor.file_editor_running', 'on') else 'Stopped ❌' }}
+          • Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running', 'on') else 'Stopped ❌' }}
+          • Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running', 'on') else 'Stopped ❌' }}
+          
+          💾 STORAGE STATUS:
+          • HA Disk Used: {{ states('sensor.home_assistant_host_disk_used') | default('N/A') }}GB / {{ states('sensor.home_assistant_host_disk_total') | default('N/A') }}GB
+          • HA Disk Free: {{ states('sensor.home_assistant_host_disk_free') | default('N/A') }}GB
+          • OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') | default('N/A') }}%
+          • OneDrive State: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          
+          🌐 NETWORK STATUS:
+          • WAN Connection: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected ❌' }}
+          • External IP: {{ states('sensor.archer_d2_external_ip_2') | default('N/A') }}
+          
+          📈 BACKUP STATUS:
+          • Last Backup: {{ states('sensor.backup_last_successful_automatic_backup') | default('N/A') }}
+          • Next Backup: {{ states('sensor.backup_next_scheduled_automatic_backup') | default('N/A') }}
+          • Backup Status: {{ states('sensor.backup_backup_manager_state') | default('N/A') | title }}
+          
+          🔍 POTENTIAL ISSUES DETECTED:
+          {% set issues = [] %}
+          {% if states('sensor.johanba_server_system_temperature')|float(0) > 60 %}
+            {% set issues = issues + ['High system temperature: ' + states('sensor.johanba_server_system_temperature') + '°C'] %}
+          {% endif %}
+          {% if states('sensor.johanba_server_memory_usage')|float(0) > 80 %}
+            {% set issues = issues + ['High memory usage: ' + states('sensor.johanba_server_memory_usage') + '%'] %}
+          {% endif %}
+          {% if not is_state('binary_sensor.archer_d2_wan_status', 'on') %}
+            {% set issues = issues + ['Network connection issue detected'] %}
+          {% endif %}
+          {% if states('sensor.home_assistant_operating_system_version') != states('sensor.home_assistant_operating_system_newest_version') %}
+            {% set issues = issues + ['Home Assistant OS update available'] %}
+          {% endif %}
+          {% if states('sensor.onedrive_usage_percentage')|float(0) > 85 %}
+            {% set issues = issues + ['OneDrive storage usage high: ' + states('sensor.onedrive_usage_percentage') + '%'] %}
+          {% endif %}
+          {% if issues|length > 0 %}
+            {% for issue in issues %}
+          • {{ issue }}
+            {% endfor %}
+          {% else %}
+          • No issues detected ✅
+          {% endif %}
+          
+          📧 This automated message confirms Home Assistant has restarted successfully.
+          All critical systems are being monitored.
+          
+          Dashboard: http://192.168.1.30:8123
+          
+          Best regards,
+          Home Assistant Startup Monitor
