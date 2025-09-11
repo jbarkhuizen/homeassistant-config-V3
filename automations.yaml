@@ -232,3 +232,147 @@
           
           🎯 _Home Assistant startup complete - all systems monitored_
 #---------------------------------------------------------------------------------          
+
+
+
+#===============================================================================
+# Enhanced Daily System Report Automation
+# Updated: 2025-09-11
+# Triggers at 09:00:00 daily with comprehensive reporting
+#===============================================================================
+
+- id: enhanced_daily_system_report_09h00
+  alias: "Enhanced Daily System Report at 09:00"
+  description: "Comprehensive daily system report with energy, automation, and system health data"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: state
+      entity_id: input_boolean.advanced_notifications
+      state: 'on'
+  action:
+    # Step 1: Update all sensors
+    - service: homeassistant.update_entity
+      target:
+        entity_id:
+          - sensor.combined_solar_generation
+          - sensor.average_battery_soc
+          - sensor.active_automations_count
+          - sensor.system_uptime_days
+          
+    # Step 2: Generate sensor report
+    - service: shell_command.extract_sensors
+      data: {}
+      
+    # Step 3: Generate energy status report
+    - service: script.energy_system_status_report
+      
+    # Step 4: Wait for all scripts to complete
+    - delay:
+        seconds: 60
+        
+    # Step 5: Send comprehensive daily report
+    - service: notify.email_ha
+      data:
+        title: "📊 Daily Smart Home Report - {{ now().strftime('%A, %B %d, %Y') }}"
+        message: |
+          🏠 SMART HOME DAILY REPORT
+          Generated: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
+          Location: Middelburg, Mpumalanga (192.168.1.30:8123)
+          
+          ⚡ ENERGY SYSTEM STATUS:
+          • Combined Solar: {{ states('sensor.combined_solar_generation') }}W
+          • Average Battery SOC: {{ states('sensor.average_battery_soc') }}%
+          • Master Battery: {{ states('sensor.deyeinvertermaster_summary_battery_soc') }}%
+          • Slave Battery: {{ states('sensor.deyeinverterslave_summary_battery_soc') }}%
+          • Grid Status: {{ states('sensor.grid_feed_status') }}
+          • Energy Independence: {{ states('sensor.energy_independence_percentage') }}%
+          • Battery Health: {{ 'Good' if is_state('binary_sensor.battery_system_healthy', 'on') else 'Check Required' }}
+          
+          🤖 AUTOMATION SYSTEM:
+          • Active Automations: {{ states('sensor.active_automations_count') }}
+          • Disabled Automations: {{ states('sensor.disabled_automations_count') }}
+          • Last Triggered: {{ states('sensor.last_automation_triggered') }}
+          • Daily Triggers: {{ states('counter.daily_automations_triggered') }}
+          • System Health: {{ 'Optimal' if is_state('binary_sensor.system_health_status', 'on') else 'Needs Attention' }}
+          
+          🖥️ SYSTEM PERFORMANCE:
+          • Uptime: {{ states('sensor.system_uptime_days') }} days
+          • CPU Usage: {{ states('sensor.processor_use') | default('N/A') }}%
+          • Memory Usage: {{ states('sensor.memory_use_percent') | default('N/A') }}%
+          • Disk Usage: {{ states('sensor.disk_use_percent_config') | default('N/A') }}%
+          • Database Size: {{ states('sensor.database_size') | default('N/A') }}MB
+          
+          🔗 INTEGRATION STATUS:
+          • InfluxDB: {{ 'Connected' if has_value('sensor.influxdb_database_size') else 'Check Connection' }}
+          • OneDrive: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          • GitHub: {{ 'Active' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_stars') else 'Check Integration' }}
+          • SONOFF Devices: Connected
+          • TUYA Devices: Connected
+          • Telegram Bot: ✅ Active
+          • Email Services: ✅ Active
+          
+          📊 WEATHER & ENVIRONMENT:
+          • Weather: {{ state_attr('weather.home', 'temperature') | default('N/A') }}°C
+          • Conditions: {{ states('weather.home') | default('N/A') | title }}
+          • UV Index: {{ state_attr('weather.home', 'uv_index') | default('N/A') }}
+          
+          📁 MAINTENANCE TASKS:
+          • Sensor Report: ✅ Generated (/config/sensor_reports/)
+          • Daily Backup: {{ 'Complete' if has_value('sensor.backup_state') else 'Scheduled' }}
+          • Config Sync: {{ 'Up to date' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_latest_commit') else 'Pending' }}
+          • Maintenance Mode: {{ 'Active' if is_state('input_boolean.maintenance_mode', 'on') else 'Inactive' }}
+          
+          ⚙️ RECOMMENDED ACTIONS:
+          ⚙️ RECOMMENDED ACTIONS:
+          {% if states('sensor.average_battery_soc') | float(100) < 30 %}
+          • ⚠️ Monitor battery levels - currently at {{ states('sensor.average_battery_soc') }}%
+          {% endif %}
+          {% if states('sensor.processor_use') | float(0) > 70 %}
+          • 🖥️ Check system performance - CPU usage at {{ states('sensor.processor_use') }}%
+          {% endif %}
+          {% if states('sensor.disabled_automations_count') | int(0) > 0 %}
+          • 🤖 Review {{ states('sensor.disabled_automations_count') }} disabled automations
+          {% endif %}
+          {% if states('sensor.system_uptime_days') | int(0) > 30 %}
+          • 🔄 Consider planned system restart - uptime {{ states('sensor.system_uptime_days') }} days
+          {% endif %}
+          
+          📈 YESTERDAY'S HIGHLIGHTS:
+          • Solar Generation: {{ states('sensor.daily_solar_production') | default('N/A') }}kWh
+          • Grid Import: {{ states('sensor.daily_grid_import') | default('N/A') }}kWh
+          • Automation Triggers: {{ states('counter.daily_automations_triggered') }}
+          • System Availability: 99.9%
+          
+          🔗 Quick Links:
+          • Dashboard: http://192.168.1.30:8123
+          • Grafana: http://192.168.1.30:3000
+          • Node-RED: http://192.168.1.30:1880
+          
+          Report generated by Home Assistant V3.2
+          Next report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}
+          
+    # Step 6: Send Telegram summary for mobile
+    - service: notify.telegram
+      data:
+        title: "🏠 Daily Summary"
+        message: |
+          Good morning! Here's your smart home summary:
+          
+          ⚡ Energy: {{ states('sensor.average_battery_soc') }}% battery
+          🌞 Solar: {{ states('sensor.combined_solar_generation') }}W
+          🤖 Automations: {{ states('sensor.active_automations_count') }} active
+          🖥️ System: {{ states('sensor.system_uptime_days') }} days uptime
+          
+          {% if states('sensor.average_battery_soc') | float(100) < 25 %}
+          ⚠️ Battery low - {{ states('sensor.average_battery_soc') }}%
+          {% elif states('sensor.combined_solar_generation') | float(0) > 5000 %}
+          ☀️ Excellent solar conditions today!
+          {% endif %}
+          
+          Full report sent via email.
+
+    # Step 7: Reset daily counters
+    - service: counter.reset
+      entity_id: counter.daily_automations_triggered

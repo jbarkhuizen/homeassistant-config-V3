@@ -1,0 +1,302 @@
+#===============================================================================
+# Advanced System Monitoring Package
+# File: packages/system_monitoring.yaml
+# Updated: 2025-09-11
+# Purpose: Comprehensive system health monitoring and alerting
+#===============================================================================
+
+# System monitoring sensors
+sensor:
+  # System Monitor integration sensors
+  - platform: systemmonitor
+    resources:
+      - type: disk_use_percent
+        arg: /config
+      - type: disk_use_percent
+        arg: /
+      - type: disk_free
+        arg: /config
+      - type: disk_free
+        arg: /
+      - type: memory_use_percent
+      - type: memory_use
+      - type: memory_free
+      - type: swap_use_percent
+      - type: swap_use
+      - type: swap_free
+      - type: load_1m
+      - type: load_5m
+      - type: load_15m
+      - type: network_in
+        arg: eth0
+      - type: network_out
+        arg: eth0
+      - type: throughput_network_in
+        arg: eth0
+      - type: throughput_network_out
+        arg: eth0
+      - type: packets_in
+        arg: eth0
+      - type: packets_out
+        arg: eth0
+      - type: ipv4_address
+        arg: eth0
+      - type: ipv6_address
+        arg: eth0
+      - type: processor_use
+      - type: processor_temperature
+      - type: last_boot
+
+  # Database size monitoring
+  - platform: sql
+    db_url: !secret database_url
+    queries:
+      - name: "Database Size"
+        query: "SELECT ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size FROM information_schema.tables WHERE table_schema = 'homeassistant';"
+        column: "size"
+        unit_of_measurement: "MB"
+
+  # File size sensors
+  - platform: filesize
+    file_paths:
+      - /config/home-assistant.log
+      - /config/home-assistant_v2.db
+
+# Template sensors for advanced monitoring
+template:
+  - sensor:
+      # System health score
+      - name: "System Health Score"
+        unique_id: system_health_score
+        unit_of_measurement: "%"
+        state: >
+          {% set cpu_score = (100 - (states('sensor.processor_use') | float(0))) * 0.3 %}
+          {% set mem_score = (100 - (states('sensor.memory_use_percent') | float(0))) * 0.3 %}
+          {% set disk_score = (100 - (states('sensor.disk_use_percent_config') | float(0))) * 0.2 %}
+          {% set load_score = max(0, (100 - (states('sensor.load_15m') | float(0) * 50))) * 0.2 %}
+          {{ (cpu_score + mem_score + disk_score + load_score) | round(1) }}
+
+      # Network throughput combined
+      - name: "Network Throughput Total"
+        unique_id: network_throughput_total
+        unit_of_measurement: "MB/s"
+        state: >
+          {% set in_mb = (states('sensor.throughput_network_in_eth0') | float(0)) / 1024 / 1024 %}
+          {% set out_mb = (states('sensor.throughput_network_out_eth0') | float(0)) / 1024 / 1024 %}
+          {{ (in_mb + out_mb) | round(3) }}
+
+      # Disk space remaining days
+      - name: "Disk Space Days Remaining"
+        unique_id: disk_space_days_remaining
+        unit_of_measurement: "days"
+        state: >
+          {% set free_gb = (states('sensor.disk_free_config') | float(0)) / 1024 %}
+          {% set usage_rate = 0.1 %}  # Assume 100MB per day
+          {{ (free_gb / usage_rate) | round(0) }}
+
+  - binary_sensor:
+      # Critical system alert
+      - name: "Critical System Alert"
+        unique_id: critical_system_alert
+        device_class: problem
+        state: >
+          {% set cpu_critical = states('sensor.processor_use') | float(0) > 90 %}
+          {% set mem_critical = states('sensor.memory_use_percent') | float(0) > 95 %}
+          {% set disk_critical = states('sensor.disk_use_percent_config') | float(0) > 95 %}
+          {% set temp_critical = states('sensor.processor_temperature') | float(0) > 80 %}
+          {{ cpu_critical or mem_critical or disk_critical or temp_critical }}
+
+      # System performance degraded
+      - name: "System Performance Degraded"
+        unique_id: system_performance_degraded
+        state: >
+          {{ states('sensor.system_health_score') | float(100) < 70 }}
+
+# Advanced system monitoring automations
+automation:
+  # Critical system alert
+  - id: critical_system_alert_notification
+    alias: "Critical System Alert Notification"
+    description: "Immediate notification for critical system issues"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.critical_system_alert
+        to: 'on'
+    action:
+      - service: notify.telegram
+        data:
+          title: "🚨 CRITICAL SYSTEM ALERT"
+          message: |
+            Critical system issue detected!
+            
+            🖥️ CURRENT STATUS:
+            • CPU: {{ states('sensor.processor_use') }}%
+            • Memory: {{ states('sensor.memory_use_percent') }}%
+            • Disk: {{ states('sensor.disk_use_percent_config') }}%
+            • Temperature: {{ states('sensor.processor_temperature') }}°C
+            • Health Score: {{ states('sensor.system_health_score') }}%
+            
+            🕒 Alert Time: {{ now().strftime('%H:%M:%S') }}
+            
+            IMMEDIATE ACTION REQUIRED!
+      - service: notify.email_ha
+        data:
+          title: "🚨 CRITICAL: Home Assistant System Alert"
+          message: |
+            CRITICAL SYSTEM ALERT - IMMEDIATE ATTENTION REQUIRED
+            
+            A critical system condition has been detected on your Home Assistant instance.
+            
+            SYSTEM METRICS:
+            • CPU Usage: {{ states('sensor.processor_use') }}% (Critical if >90%)
+            • Memory Usage: {{ states('sensor.memory_use_percent') }}% (Critical if >95%)
+            • Disk Usage: {{ states('sensor.disk_use_percent_config') }}% (Critical if >95%)
+            • Processor Temperature: {{ states('sensor.processor_temperature') }}°C (Critical if >80°C)
+            • System Load (15m): {{ states('sensor.load_15m') }}
+            • Health Score: {{ states('sensor.system_health_score') }}%
+            
+            NETWORK STATUS:
+            • Network Throughput: {{ states('sensor.network_throughput_total') }}MB/s
+            • IPv4 Address: {{ states('sensor.ipv4_address_eth0') }}
+            
+            DISK STATUS:
+            • Free Space (/config): {{ states('sensor.disk_free_config') }}GB
+            • Estimated Days Remaining: {{ states('sensor.disk_space_days_remaining') }} days
+            
+            DATABASE:
+            • Database Size: {{ states('sensor.database_size') }}MB
+            
+            RECOMMENDED ACTIONS:
+            1. Check system resources immediately
+            2. Review recent changes or updates
+            3. Consider stopping non-essential services
+            4. Plan for system maintenance if needed
+            
+            System: Home Assistant @ 192.168.1.30:8123
+            Alert Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+  # Database maintenance reminder
+  - id: database_maintenance_reminder
+    alias: "Database Maintenance Reminder"
+    description: "Reminder to perform database maintenance"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.database_size
+        above: 1000  # 1GB
+    condition:
+      - condition: time
+        after: "09:00:00"
+        before: "10:00:00"
+    action:
+      - service: notify.email_ha
+        data:
+          title: "📊 Database Maintenance Reminder"
+          message: |
+            Your Home Assistant database is getting large.
+            
+            Current Size: {{ states('sensor.database_size') }}MB
+            Recommended: Consider purging old data or reducing retention period.
+            
+            Current Settings:
+            • Purge Keep Days: 10 days
+            • Auto Purge: Enabled
+            
+            You may want to:
+            1. Review recorder configuration
+            2. Exclude unnecessary entities
+            3. Manually purge old data if needed
+
+  # Weekly system health report
+  - id: weekly_system_health_report
+    alias: "Weekly System Health Report"
+    description: "Comprehensive weekly system health analysis"
+    trigger:
+      - platform: time
+        at: "09:15:00"
+    condition:
+      - condition: time
+        weekday:
+          - sun
+    action:
+      - service: script.system_health_analysis
+      - delay:
+          seconds: 30
+      - service: notify.email_ha
+        data:
+          title: "📊 Weekly System Health Report"
+          message: |
+            WEEKLY SYSTEM HEALTH ANALYSIS
+            Week Ending: {{ now().strftime('%Y-%m-%d') }}
+            
+            📈 PERFORMANCE SUMMARY:
+            • Average Health Score: {{ states('sensor.system_health_score') }}%
+            • Current CPU Usage: {{ states('sensor.processor_use') }}%
+            • Current Memory Usage: {{ states('sensor.memory_use_percent') }}%
+            • Current Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
+            • System Uptime: {{ states('sensor.system_uptime_days') }} days
+            
+            🌡️ TEMPERATURE MONITORING:
+            • Processor Temperature: {{ states('sensor.processor_temperature') }}°C
+            • Status: {{ 'Normal' if states('sensor.processor_temperature') | float(0) < 70 else 'Monitor Closely' }}
+            
+            💾 STORAGE ANALYSIS:
+            • Free Disk Space: {{ states('sensor.disk_free_config') }}GB
+            • Database Size: {{ states('sensor.database_size') }}MB
+            • Log File Size: {{ states('sensor.homeassistant_log') }}MB
+            • Estimated Days Until Full: {{ states('sensor.disk_space_days_remaining') }}
+            
+            🌐 NETWORK PERFORMANCE:
+            • Average Throughput: {{ states('sensor.network_throughput_total') }}MB/s
+            • IP Address: {{ states('sensor.ipv4_address_eth0') }}
+            • Packets In: {{ states('sensor.packets_in_eth0') }}
+            • Packets Out: {{ states('sensor.packets_out_eth0') }}
+            
+            📊 SYSTEM LOAD:
+            • 1-minute load: {{ states('sensor.load_1m') }}
+            • 5-minute load: {{ states('sensor.load_5m') }}
+            • 15-minute load: {{ states('sensor.load_15m') }}
+            
+            ⚠️ ALERTS & RECOMMENDATIONS:
+            {% if states('sensor.system_health_score') | float(100) < 80 %}
+            • System health score below optimal - investigate performance issues
+            {% endif %}
+            {% if states('sensor.database_size') | float(0) > 500 %}
+            • Database size is {{ states('sensor.database_size') }}MB - consider maintenance
+            {% endif %}
+            {% if states('sensor.disk_use_percent_config') | float(0) > 70 %}
+            • Disk usage at {{ states('sensor.disk_use_percent_config') }}% - monitor closely
+            {% endif %}
+            {% if states('sensor.system_uptime_days') | float(0) > 30 %}
+            • System uptime {{ states('sensor.system_uptime_days') }} days - consider planned restart
+            {% endif %}
+            
+            📅 NEXT ACTIONS:
+            • Next weekly report: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d') }}
+            • Monthly maintenance: {{ (now().replace(day=1) + timedelta(days=32)).replace(day=1).strftime('%Y-%m-%d') }}
+            
+            Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+# Scripts for system monitoring
+script:
+  system_health_analysis:
+    alias: "System Health Analysis"
+    sequence:
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.system_health_score
+            - sensor.network_throughput_total
+            - sensor.disk_space_days_remaining
+            - binary_sensor.critical_system_alert
+      - delay:
+          seconds: 5
+
+  emergency_system_cleanup:
+    alias: "Emergency System Cleanup"
+    sequence:
+      - service: recorder.purge
+        data:
+          keep_days: 3
+          repack: true
+      - service: system_log.clear
+      - service: homeassistant.restart
