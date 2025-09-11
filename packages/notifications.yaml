@@ -1,73 +1,37 @@
 #===============================================================================
-# Consolidated Notifications Configuration - FIXED
+# Consolidated Notifications Configuration
 # File: /config/packages/notifications.yaml
 # Purpose: All notification services consolidated with correct device references
 #===============================================================================
+#-------------------------------------------------------------------------------
 
-notify:
-  # Email services (confirmed working)
-  - name: email_ha
-    platform: smtp
-    server: smtp.gmail.com
-    port: 587
-    timeout: 15
-    sender: jbarkhuizen@gmail.com
-    encryption: starttls
-    username: jbarkhuizen@gmail.com
-    password: !secret gmail_app_password
-    recipient: jbarkhuizen@gmail.com
-    sender_name: "Home Assistant"
-
-  - name: email_sensors
-    platform: smtp
-    server: smtp.gmail.com
-    port: 587
-    timeout: 15
-    sender: jbarkhuizen@gmail.com
-    encryption: starttls
-    username: jbarkhuizen@gmail.com
-    password: !secret gmail_app_password
-    recipient: jbarkhuizen@gmail.com
-    sender_name: "HA Sensor Reports"
-
-  - name: email_alerts
-    platform: smtp
-    server: smtp.gmail.com
-    port: 587
-    timeout: 15
-    sender: jbarkhuizen@gmail.com
-    encryption: starttls
-    username: jbarkhuizen@gmail.com
-    password: !secret gmail_app_password
-    recipient: jbarkhuizen@gmail.com
-    sender_name: "HA Alert System"
-
-  # Telegram service
-  - name: telegram
-    platform: telegram
-    chat_id: !secret telegram_chat_id
-
+#-------------------------------------------------------------------------------
+#  # Telegram service
+#  - name: telegram
+#    platform: telegram
+#    chat_id: !secret telegram_chat_id
+#-------------------------------------------------------------------------------
 # Telegram Bot Configuration
-telegram_bot:
-  - platform: polling
-    api_key: !secret telegram_bot_token
-    allowed_chat_ids:
-      - !secret telegram_chat_id
-
+#telegram_bot:
+#  - platform: polling
+#    api_key: !secret telegram_bot_token
+#    allowed_chat_ids:
+#      - !secret telegram_chat_id
+#-------------------------------------------------------------------------------
 # Template sensor for Telegram bot status
-template:
-  - binary_sensor:
-      - name: "Telegram Bot Connected"
-        unique_id: telegram_bot_connected
-        state: >
-          {{ states('sensor.telegram_bot') not in ['unknown', 'unavailable'] }}
-        icon: >
-          {% if is_state('binary_sensor.telegram_bot_connected', 'on') %}
-            mdi:telegram
-          {% else %}
-            mdi:telegram-off
-          {% endif %}
-
+#template:
+#  - binary_sensor:
+#      - name: "Telegram Bot Connected"
+#        unique_id: telegram_bot_connected
+#        state: >
+#          {{ states('sensor.telegram_bot') not in ['unknown', 'unavailable'] }}
+#        icon: >
+#          {% if is_state('binary_sensor.telegram_bot_connected', 'on') %}
+#            mdi:telegram
+#          {% else %}
+#            mdi:telegram-off
+#          {% endif %}
+#-------------------------------------------------------------------------------
 # Test scripts with proper device references
 script:
   # Test basic email functionality
@@ -82,54 +46,58 @@ script:
             Service: notify.email_ha
             Status: ✅ Working
             From: Home Assistant (192.168.1.30:8123)
-
-  # Test Telegram functionality
-  test_telegram_basic:
-    alias: "Test Telegram - Basic"
-    sequence:
-      - service: notify.telegram
-        data:
-          title: "📱 Telegram Test"
-          message: |
-            Telegram test - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-            Service: notify.telegram
-            Status: ✅ Working
-            From: Home Assistant (192.168.1.30:8123)
-
+#-------------------------------------------------------------------------------
+#  # Test Telegram functionality
+#  test_telegram_basic:
+#    alias: "Test Telegram - Basic"
+#    sequence:
+#      - service: notify.telegram
+#        data:
+#          title: "📱 Telegram Test"
+#          message: |
+#            Telegram test - {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+#            Service: notify.telegram
+#            Status: ✅ Working
+#            From: Home Assistant (192.168.1.30:8123)
+#===============================================================================
   # Combined notification test
-  test_all_notifications:
-    alias: "Test All Notifications"
-    sequence:
-      - service: notify.email_ha
-        data:
-          title: "🔧 Notification System Test"
-          message: |
-            Testing all notification systems at {{ now().strftime('%H:%M:%S') }}
-            
-            This email confirms your SMTP settings are working correctly.
-            
-            System: Home Assistant (192.168.1.30:8123)
-            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-      - delay: 5
-      - service: notify.telegram
-        data:
-          message: |
-            🔧 Notification Test Complete
-            
-            Email: ✅ Sent successfully
-            Telegram: ✅ Working
-            Time: {{ now().strftime('%H:%M:%S') }}
-            
-            All systems operational! 🎉
-
+#===============================================================================
+#-------------------------------------------------------------------------------
+#test_all_notifications:
+#    alias: "Test All Notifications"
+#    sequence:
+#      - service: notify.email_ha
+#        data:
+#          title: "🔧 Email Notification System Test"
+#          message: |
+#            Testing all notification systems at {{ now().strftime('%H:%M:%S') }}
+#            
+#            This email confirms your SMTP settings are working correctly.
+#            
+#            System: Home Assistant (192.168.1.30:8123)
+#            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+#      - delay: 5
+#-------------------------------------------------------------------------------      
+#      - service: notify.telegram
+#        data:
+#          message: |
+#            🔧 Notification Test Complete
+#            
+#            Email: ✅ Sent successfully
+#            Telegram: ✅ Working
+#            Time: {{ now().strftime('%H:%M:%S') }}
+#            
+#            All systems operational! 🎉
+#===============================================================================
 # Startup test automation
-automation:
-  - id: 'test_notifications_startup'
-    alias: 'Test Notifications at Startup'
-    description: 'Test all notification systems when Home Assistant starts'
-    trigger:
-      - platform: homeassistant
-        event: start
-    action:
-      - delay: '00:02:00'  # Wait 2 minutes for all systems to initialize
-      - service: script.test_all_notifications
+#automation:
+#  - id: 'test_notifications_startup'
+#    alias: 'Test Notifications at Startup'
+#    description: 'Test all notification systems when Home Assistant starts'
+#    trigger:
+#      - platform: homeassistant
+#        event: start
+#    action:
+#      - delay: '00:02:00'  # Wait 2 minutes for all systems to initialize
+#      - service: script.test_all_notifications
+#-------------------------------------------------------------------------------      

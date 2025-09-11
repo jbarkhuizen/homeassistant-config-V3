@@ -4,26 +4,26 @@
 #===============================================================================
 
 # Daily Telegram Test - Fixed
-- id: send_test_telegram_daily
-  alias: "Send Test Telegram Message Daily at 09:00"
-  description: "Daily Telegram functionality test"
-  trigger:
-    - platform: time
-      at: "09:00:00"
-  condition: []
-  action:
-    - service: notify.telegram
-      data:
-        title: "🏠 Daily Status Check"
-        message: |
-          Home Assistant Daily Report - {{ now().strftime('%Y-%m-%d') }}
-          
-          🟢 System Status: Online
-          ⏰ Time: {{ now().strftime('%H:%M:%S') }}
-          🌡️ System Temp: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
-          💾 Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
-          
-          Telegram notifications are working correctly! ✅
+#- id: send_test_telegram_daily
+#  alias: "Send Test Telegram Message Daily at 09:00"
+#  description: "Daily Telegram functionality test"
+#  trigger:
+#    - platform: time
+#      at: "09:00:00"
+#  condition: []
+#  action:
+#    - service: notify.telegram
+#      data:
+#        title: "🏠 Daily Status Check"
+#        message: |
+#          Home Assistant Daily Report - {{ now().strftime('%Y-%m-%d') }}
+#          
+#          🟢 System Status: Online
+#          ⏰ Time: {{ now().strftime('%H:%M:%S') }}
+#          🌡️ System Temp: {{ states('sensor.johanba_server_system_temperature') | default('N/A') }}°C
+#          💾 Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('N/A') }}%
+#          
+#          Telegram notifications are working correctly! ✅
 
 # Daily Email Test - New
 - id: send_test_email_daily
@@ -135,21 +135,21 @@
           Best regards,
           Home Assistant Weekly Report System
     - delay: 60
-    - service: notify.telegram
-      data:
-        message: |
-          📊 Weekly Report Sent
-          
-          Comprehensive system report emailed at {{ now().strftime('%H:%M:%S') }}
-          
-          Check your email for detailed weekly statistics! 📧
+#    - service: notify.telegram
+#      data:
+#        message: |
+#          📊 Weekly Report Sent
+#          
+#          Comprehensive system report emailed at {{ now().strftime('%H:%M:%S') }}
+#          
+#          Check your email for detailed weekly statistics! 📧
 
 # Test notification system - Manual trigger
-- id: test_notification_system_manual
-  alias: "Test Notification System - Manual"
-  description: "Manually test both email and Telegram"
-  trigger:
-    - platform: event
-      event_type: test_notifications
-  action:
-    - service: script.test_all_notifications
+#- id: test_notification_system_manual
+#  alias: "Test Notification System - Manual"
+#  description: "Manually test both email and Telegram"
+#  trigger:
+#    - platform: event
+#      event_type: test_notifications
+#  action:
+#    - service: script.test_all_notifications
