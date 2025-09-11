@@ -1,0 +1,987 @@
+#===============================================================================
+# Metrofibre Internet Monitoring Package - 500 Mbps
+# File: packages/internet_monitoring.yaml
+# Updated: 2025-09-11
+# Purpose: Monitor 500Mbps Metrofibre connection and Nokia router performance
+# Router: Nokia 192.168.1.1 (ALCL Beacon 2)
+# ISP: Metrofibre (Fibre)
+#===============================================================================
+
+# Input helpers for thresholds and settings
+input_number:
+  # Speed thresholds for alerting (customized for 500 Mbps plan)
+  minimum_download_speed:
+    name: "Minimum Download Speed Threshold"
+    min: 50
+    max: 500
+    step: 10
+    initial: 400  # 80% of contracted speed
+    unit_of_measurement: "Mbps"
+    icon: mdi:download
+
+  minimum_upload_speed:
+    name: "Minimum Upload Speed Threshold"
+    min: 50
+    max: 500
+    step: 10
+    initial: 400  # 80% of contracted speed
+    unit_of_measurement: "Mbps"
+    icon: mdi:upload
+
+  maximum_ping_threshold:
+    name: "Maximum Ping Threshold"
+    min: 5
+    max: 100
+    step: 1
+    initial: 20  # Fiber should have low latency
+    unit_of_measurement: "ms"
+    icon: mdi:timer
+
+  speed_test_interval:
+    name: "Speed Test Interval"
+    min: 10
+    max: 180
+    step: 5
+    initial: 30  # Default 30 minutes as requested
+    unit_of_measurement: "minutes"
+    icon: mdi:clock-outline
+
+  connection_timeout_threshold:
+    name: "Connection Timeout Threshold"
+    min: 30
+    max: 300
+    step: 15
+    initial: 60  # Seconds before considering disconnection
+    unit_of_measurement: "seconds"
+    icon: mdi:timer-sand
+
+  peak_hours_interval:
+    name: "Peak Hours Test Interval"
+    min: 5
+    max: 60
+    step: 5
+    initial: 15  # More frequent testing during peak hours
+    unit_of_measurement: "minutes"
+    icon: mdi:clock-fast
+
+input_boolean:
+  # Control switches for monitoring
+  internet_monitoring_enabled:
+    name: "Internet Monitoring Enabled"
+    icon: mdi:speedometer
+    initial: true
+
+  peak_hours_monitoring:
+    name: "Enhanced Peak Hours Monitoring"
+    icon: mdi:clock-alert
+    initial: true
+
+  disconnection_alerts:
+    name: "Disconnection Alerts Enabled"
+    icon: mdi:wifi-off
+    initial: true
+
+  metrofibre_complaint_mode:
+    name: "Metrofibre Complaint Documentation Mode"
+    icon: mdi:file-document-alert
+    initial: false
+
+  low_speed_alerts:
+    name: "Low Speed Alerts Enabled"
+    icon: mdi:speedometer-slow
+    initial: true
+
+input_select:
+  # Peak hours definition for Metrofibre network
+  peak_hours_definition:
+    name: "Peak Hours Definition"
+    options:
+      - "18:00-23:00 (Evening Peak)"
+      - "19:00-22:00 (Prime Time)"
+      - "17:00-21:00 (After Work)"
+      - "20:00-23:00 (Night Peak)"
+      - "Custom"
+    initial: "19:00-22:00 (Prime Time)"
+    icon: mdi:clock-time-eight
+
+  monitoring_mode:
+    name: "Monitoring Mode"
+    options:
+      - "Normal (30 min intervals)"
+      - "Enhanced (15 min intervals)"
+      - "Intensive (10 min intervals)"
+      - "Troubleshooting (5 min intervals)"
+      - "Documentation (3 min intervals)"
+    initial: "Normal (30 min intervals)"
+    icon: mdi:cog
+
+# Command line sensors for Nokia router and network monitoring
+sensor:
+  # Nokia router connectivity check
+  - platform: command_line
+    name: "Nokia Router Ping"
+    command: 'ping -c 1 -W 3 192.168.1.1 | grep "time=" | awk -F"time=" "{print $2}" | awk "{print $1}"'
+    unit_of_measurement: "ms"
+    scan_interval: 60
+    value_template: "{{ value | float(999) | round(1) }}"
+
+  # Multiple external connectivity checks for redundancy
+  - platform: command_line
+    name: "Google DNS Ping"
+    command: 'ping -c 1 -W 5 8.8.8.8 | grep "time=" | awk -F"time=" "{print $2}" | awk "{print $1}"'
+    unit_of_measurement: "ms"
+    scan_interval: 120
+    value_template: "{{ value | float(999) | round(1) }}"
+
+  - platform: command_line
+    name: "Cloudflare DNS Ping"
+    command: 'ping -c 1 -W 5 1.1.1.1 | grep "time=" | awk -F"time=" "{print $2}" | awk "{print $1}"'
+    unit_of_measurement: "ms"
+    scan_interval: 120
+    value_template: "{{ value | float(999) | round(1) }}"
+
+  # South African specific targets
+  - platform: command_line
+    name: "MTN DNS Ping"
+    command: 'ping -c 1 -W 5 196.11.240.241 | grep "time=" | awk -F"time=" "{print $2}" | awk "{print $1}"'
+    unit_of_measurement: "ms"
+    scan_interval: 300
+    value_template: "{{ value | float(999) | round(1) }}"
+
+  - platform: command_line
+    name: "SAIX Ping"
+    command: 'ping -c 1 -W 5 196.21.0.35 | grep "time=" | awk -F"time=" "{print $2}" | awk "{print $1}"'
+    unit_of_measurement: "ms"
+    scan_interval: 300
+    value_template: "{{ value | float(999) | round(1) }}"
+
+  # Connection stability test - packet loss check
+  - platform: command_line
+    name: "Connection Packet Loss"
+    command: 'ping -c 10 -W 3 8.8.8.8 | grep "packet loss" | awk "{print $6}" | sed "s/%//"'
+    unit_of_measurement: "%"
+    scan_interval: 900  # Every 15 minutes
+    value_template: "{{ value | float(0) | round(1) }}"
+
+  # Route stability check
+  - platform: command_line
+    name: "Internet Route Hops"
+    command: 'traceroute -m 20 8.8.8.8 2>/dev/null | wc -l'
+    scan_interval: 1800  # Every 30 minutes
+    value_template: "{{ (value | int(0) - 1) if value | int(0) > 1 else 0 }}"
+
+  # Network interface statistics (if available)
+  - platform: command_line
+    name: "Router Uptime"
+    command: 'ping -c 1 192.168.1.1 >/dev/null 2>&1 && echo "online" || echo "offline"'
+    scan_interval: 60
+
+# Template sensors for advanced analysis
+template:
+  - sensor:
+      # Download speed performance percentage (500 Mbps baseline)
+      - name: "Download Speed Performance"
+        unique_id: download_speed_performance
+        unit_of_measurement: "%"
+        state: >
+          {% set current = states('sensor.cloudflare_speed_test_25mb_down') | float(0) %}
+          {% set contracted = 500 %}  # Metrofibre 500 Mbps
+          {% if current > 0 %}
+            {{ ((current / contracted) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:percent
+
+      # Upload speed performance percentage (500 Mbps baseline)
+      - name: "Upload Speed Performance"
+        unique_id: upload_speed_performance
+        unit_of_measurement: "%"
+        state: >
+          {% set current = states('sensor.cloudflare_speed_test_10mb_up') | float(0) %}
+          {% set contracted = 500 %}  # Metrofibre 500 Mbps symmetric
+          {% if current > 0 %}
+            {{ ((current / contracted) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:percent
+
+      # Fiber network quality score (higher standards for fiber)
+      - name: "Fiber Network Quality Score"
+        unique_id: fiber_network_quality_score
+        unit_of_measurement: "%"
+        state: >
+          {% set download_perf = states('sensor.download_speed_performance') | float(0) %}
+          {% set upload_perf = states('sensor.upload_speed_performance') | float(0) %}
+          {% set ping = states('sensor.cloudflare_speed_test_latency') | float(999) %}
+          {% set jitter = states('sensor.cloudflare_speed_test_jitter') | float(999) %}
+          {% set packet_loss = states('sensor.connection_packet_loss') | float(0) %}
+          
+          {# Fiber should have excellent performance #}
+          {% set ping_score = max(0, 100 - (ping * 3)) %}  # Stricter for fiber
+          {% set jitter_score = max(0, 100 - (jitter * 10)) %}  # Stricter for fiber
+          {% set loss_score = max(0, 100 - (packet_loss * 20)) %}  # No tolerance for packet loss
+          
+          {% set total_score = (download_perf * 0.35) + (upload_perf * 0.35) + (ping_score * 0.15) + (jitter_score * 0.1) + (loss_score * 0.05) %}
+          {{ total_score | round(1) }}
+        icon: mdi:speedometer
+
+      # Connection stability status with fiber-specific criteria
+      - name: "Metrofibre Connection Status"
+        unique_id: metrofibre_connection_status
+        state: >
+          {% set router_ping = states('sensor.nokia_router_ping') | float(999) %}
+          {% set google_ping = states('sensor.google_dns_ping') | float(999) %}
+          {% set quality = states('sensor.fiber_network_quality_score') | float(0) %}
+          {% set packet_loss = states('sensor.connection_packet_loss') | float(0) %}
+          {% set download = states('sensor.cloudflare_speed_test_25mb_down') | float(0) %}
+          
+          {% if router_ping > 100 %}
+            Router Issue
+          {% elif google_ping > 200 %}
+            ISP/Metrofibre Issue
+          {% elif packet_loss > 1 %}
+            Connection Instability
+          {% elif download < 100 %}
+            Severe Speed Issue
+          {% elif quality > 90 %}
+            Excellent
+          {% elif quality > 80 %}
+            Good
+          {% elif quality > 70 %}
+            Fair
+          {% elif quality > 50 %}
+            Poor
+          {% else %}
+            Critical
+          {% endif %}
+        icon: >
+          {% set quality = states('sensor.fiber_network_quality_score') | float(0) %}
+          {% if quality > 90 %}
+            mdi:wifi-strength-4
+          {% elif quality > 80 %}
+            mdi:wifi-strength-3
+          {% elif quality > 70 %}
+            mdi:wifi-strength-2
+          {% elif quality > 50 %}
+            mdi:wifi-strength-1
+          {% else %}
+            mdi:wifi-strength-outline
+          {% endif %}
+
+      # Peak hours detection (customizable)
+      - name: "Peak Hours Status"
+        unique_id: peak_hours_status
+        state: >
+          {% set hour = now().hour %}
+          {% set peak_def = states('input_select.peak_hours_definition') %}
+          {% if peak_def == "18:00-23:00 (Evening Peak)" %}
+            {{ 'Active' if hour >= 18 and hour <= 23 else 'Inactive' }}
+          {% elif peak_def == "19:00-22:00 (Prime Time)" %}
+            {{ 'Active' if hour >= 19 and hour <= 22 else 'Inactive' }}
+          {% elif peak_def == "17:00-21:00 (After Work)" %}
+            {{ 'Active' if hour >= 17 and hour <= 21 else 'Inactive' }}
+          {% elif peak_def == "20:00-23:00 (Night Peak)" %}
+            {{ 'Active' if hour >= 20 and hour <= 23 else 'Inactive' }}
+          {% else %}
+            Inactive
+          {% endif %}
+        icon: mdi:clock-alert
+
+      # Metrofibre performance summary
+      - name: "Metrofibre Performance Summary"
+        unique_id: metrofibre_performance_summary
+        state: >
+          {% set download = states('sensor.cloudflare_speed_test_25mb_down') | float(0) %}
+          {% set upload = states('sensor.cloudflare_speed_test_10mb_up') | float(0) %}
+          {% set ping = states('sensor.cloudflare_speed_test_latency') | float(999) %}
+          {% set status = states('sensor.metrofibre_connection_status') %}
+          {% set quality = states('sensor.fiber_network_quality_score') | float(0) %}
+          
+          D:{{ download }}↓ U:{{ upload }}↑ P:{{ ping }}ms Q:{{ quality }}% {{ status }}
+
+      # Disconnection detection
+      - name: "Connection Uptime Status"
+        unique_id: connection_uptime_status
+        state: >
+          {% set router_status = states('sensor.router_uptime') %}
+          {% set google_ping = states('sensor.google_dns_ping') | float(999) %}
+          {% set cloudflare_ping = states('sensor.cloudflare_dns_ping') | float(999) %}
+          
+          {% if router_status == "offline" %}
+            Router Offline
+          {% elif google_ping > 500 and cloudflare_ping > 500 %}
+            Internet Disconnected
+          {% elif google_ping < 50 and cloudflare_ping < 50 %}
+            Fully Connected
+          {% else %}
+            Partial Connectivity
+          {% endif %}
+        icon: mdi:connection
+
+      # Current monitoring interval
+      - name: "Current Test Interval"
+        unique_id: current_test_interval
+        unit_of_measurement: "minutes"
+        state: >
+          {% set mode = states('input_select.monitoring_mode') %}
+          {% set peak_active = states('sensor.peak_hours_status') == 'Active' %}
+          
+          {% if mode == "Documentation (3 min intervals)" %}
+            3
+          {% elif mode == "Troubleshooting (5 min intervals)" %}
+            5
+          {% elif mode == "Intensive (10 min intervals)" %}
+            10
+          {% elif mode == "Enhanced (15 min intervals)" %}
+            15
+          {% elif peak_active and is_state('input_boolean.peak_hours_monitoring', 'on') %}
+            {{ states('input_number.peak_hours_interval') | int(15) }}
+          {% else %}
+            {{ states('input_number.speed_test_interval') | int(30) }}
+          {% endif %}
+
+  - binary_sensor:
+      # Nokia router connectivity
+      - name: "Nokia Router Online"
+        unique_id: nokia_router_online
+        device_class: connectivity
+        state: >
+          {{ states('sensor.nokia_router_ping') | float(999) < 50 }}
+
+      # Internet connectivity (multiple checks)
+      - name: "Internet Connected"
+        unique_id: internet_connected
+        device_class: connectivity
+        state: >
+          {% set google = states('sensor.google_dns_ping') | float(999) %}
+          {% set cloudflare = states('sensor.cloudflare_dns_ping') | float(999) %}
+          {{ google < 200 or cloudflare < 200 }}
+
+      # Speed significantly below threshold (for 500 Mbps)
+      - name: "Speed Critically Low"
+        unique_id: speed_critically_low
+        device_class: problem
+        state: >
+          {% set download = states('sensor.cloudflare_speed_test_25mb_down') | float(0) %}
+          {% set upload = states('sensor.cloudflare_speed_test_10mb_up') | float(0) %}
+          {% set min_down = states('input_number.minimum_download_speed') | float(400) %}
+          {% set min_up = states('input_number.minimum_upload_speed') | float(400) %}
+          {{ download < min_down or upload < min_up }}
+
+      # Fiber latency too high
+      - name: "Fiber Latency High"
+        unique_id: fiber_latency_high
+        device_class: problem
+        state: >
+          {% set ping = states('sensor.cloudflare_speed_test_latency') | float(0) %}
+          {% set threshold = states('input_number.maximum_ping_threshold') | float(20) %}
+          {{ ping > threshold }}
+
+      # Connection quality poor for fiber standards
+      - name: "Fiber Quality Poor"
+        unique_id: fiber_quality_poor
+        device_class: problem
+        state: >
+          {{ states('sensor.fiber_network_quality_score') | float(100) < 70 }}
+
+      # Packet loss detected
+      - name: "Packet Loss Detected"
+        unique_id: packet_loss_detected
+        device_class: problem
+        state: >
+          {{ states('sensor.connection_packet_loss') | float(0) > 0.5 }}
+
+      # Metrofibre issue detected
+      - name: "Metrofibre Issue Detected"
+        unique_id: metrofibre_issue_detected
+        device_class: problem
+        state: >
+          {% set router_ok = is_state('binary_sensor.nokia_router_online', 'on') %}
+          {% set internet_issue = is_state('binary_sensor.internet_connected', 'off') %}
+          {% set speed_issue = is_state('binary_sensor.speed_critically_low', 'on') %}
+          {% set quality_issue = is_state('binary_sensor.fiber_quality_poor', 'on') %}
+          {% set packet_loss = is_state('binary_sensor.packet_loss_detected', 'on') %}
+          {{ router_ok and (internet_issue or speed_issue or quality_issue or packet_loss) }}
+
+      # Disconnection event
+      - name: "Connection Disconnected"
+        unique_id: connection_disconnected
+        device_class: problem
+        state: >
+          {% set uptime_status = states('sensor.connection_uptime_status') %}
+          {{ uptime_status in ['Router Offline', 'Internet Disconnected'] }}
+
+# Automations for Metrofibre monitoring
+automation:
+  # Dynamic speed testing based on monitoring mode and peak hours
+  - id: dynamic_speed_test_metrofibre
+    alias: "Dynamic Speed Test - Metrofibre"
+    description: "Run speed tests based on monitoring mode and peak hours"
+    trigger:
+      - platform: time_pattern
+        minutes: "/5"  # Check every 5 minutes, but only run based on interval
+    condition:
+      - condition: state
+        entity_id: input_boolean.internet_monitoring_enabled
+        state: 'on'
+      - condition: template
+        value_template: >
+          {% set last_test = as_timestamp(states.sensor.cloudflare_speed_test_25mb_down.last_updated) %}
+          {% set now_ts = as_timestamp(now()) %}
+          {% set interval_minutes = states('sensor.current_test_interval') | int(30) %}
+          {% set interval_seconds = interval_minutes * 60 %}
+          {{ (now_ts - last_test) >= interval_seconds }}
+    action:
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.cloudflare_speed_test_25mb_down
+            - sensor.cloudflare_speed_test_10mb_up
+            - sensor.cloudflare_speed_test_latency
+            - sensor.cloudflare_speed_test_jitter
+
+  # Metrofibre issue detection and comprehensive alerting
+  - id: metrofibre_issue_detection
+    alias: "Metrofibre Issue Detection Alert"
+    description: "Comprehensive alert when Metrofibre issues are detected"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.metrofibre_issue_detected
+        to: 'on'
+        for:
+          minutes: 3
+    action:
+      - service: notify.telegram
+        data:
+          title: "🌐 Metrofibre Performance Issue"
+          message: |
+            Metrofibre connection issue detected!
+            
+            📊 CURRENT PERFORMANCE:
+            • Download: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps ({{ states('sensor.download_speed_performance') }}%)
+            • Upload: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps ({{ states('sensor.upload_speed_performance') }}%)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms
+            • Quality: {{ states('sensor.fiber_network_quality_score') }}%
+            • Status: {{ states('sensor.metrofibre_connection_status') }}
+            
+            🔧 DIAGNOSTICS:
+            • Nokia Router: {{ 'Online' if is_state('binary_sensor.nokia_router_online', 'on') else 'Offline' }} ({{ states('sensor.nokia_router_ping') }}ms)
+            • Internet: {{ 'Connected' if is_state('binary_sensor.internet_connected', 'on') else 'Disconnected' }}
+            • Packet Loss: {{ states('sensor.connection_packet_loss') }}%
+            
+            ⚠️ ISSUES:
+            • Speed Low: {{ 'Yes' if is_state('binary_sensor.speed_critically_low', 'on') else 'No' }}
+            • High Latency: {{ 'Yes' if is_state('binary_sensor.fiber_latency_high', 'on') else 'No' }}
+            • Packet Loss: {{ 'Yes' if is_state('binary_sensor.packet_loss_detected', 'on') else 'No' }}
+            
+            Time: {{ now().strftime('%H:%M:%S') }}
+
+      - service: notify.email_ha
+        data:
+          title: "🚨 Metrofibre Performance Issue - {{ now().strftime('%Y-%m-%d %H:%M') }}"
+          message: |
+            METROFIBRE CONNECTION PERFORMANCE ISSUE
+            
+            ISSUE SUMMARY:
+            • Connection Status: {{ states('sensor.metrofibre_connection_status') }}
+            • Fiber Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            • Performance Summary: {{ states('sensor.metrofibre_performance_summary') }}
+            
+            CURRENT SPEEDS (Contract: 500/500 Mbps):
+            • Download Speed: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps ({{ states('sensor.download_speed_performance') }}% of contracted)
+            • Upload Speed: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps ({{ states('sensor.upload_speed_performance') }}% of contracted)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms (Threshold: {{ states('input_number.maximum_ping_threshold') }}ms)
+            • Jitter: {{ states('sensor.cloudflare_speed_test_jitter') }}ms
+            
+            NETWORK DIAGNOSTICS:
+            • Nokia Router (192.168.1.1): {{ 'Online' if is_state('binary_sensor.nokia_router_online', 'on') else 'OFFLINE' }} ({{ states('sensor.nokia_router_ping') }}ms)
+            • Google DNS (8.8.8.8): {{ states('sensor.google_dns_ping') }}ms
+            • Cloudflare DNS (1.1.1.1): {{ states('sensor.cloudflare_dns_ping') }}ms
+            • MTN DNS: {{ states('sensor.mtn_dns_ping') }}ms
+            • SAIX: {{ states('sensor.saix_ping') }}ms
+            • Packet Loss: {{ states('sensor.connection_packet_loss') }}%
+            • Route Hops: {{ states('sensor.internet_route_hops') }}
+            
+            ROUTER INFORMATION:
+            • Manufacturer: Nokia (ALCL)
+            • Model: Beacon 2
+            • Hardware: 3FE49294CEAA
+            • Software: 3FE49334JJKJ24
+            • IP: 192.168.1.1
+            
+            CONNECTION ISSUES DETECTED:
+            • Speed Critically Low: {{ 'YES' if is_state('binary_sensor.speed_critically_low', 'on') else 'No' }}
+            • Fiber Latency High: {{ 'YES' if is_state('binary_sensor.fiber_latency_high', 'on') else 'No' }}
+            • Quality Poor: {{ 'YES' if is_state('binary_sensor.fiber_quality_poor', 'on') else 'No' }}
+            • Packet Loss: {{ 'YES' if is_state('binary_sensor.packet_loss_detected', 'on') else 'No' }}
+            • Disconnection: {{ 'YES' if is_state('binary_sensor.connection_disconnected', 'on') else 'No' }}
+            
+            MONITORING SETTINGS:
+            • Test Interval: {{ states('sensor.current_test_interval') }} minutes
+            • Monitoring Mode: {{ states('input_select.monitoring_mode') }}
+            • Peak Hours: {{ states('sensor.peak_hours_status') }} ({{ states('input_select.peak_hours_definition') }})
+            • Complaint Mode: {{ 'ENABLED' if is_state('input_boolean.metrofibre_complaint_mode', 'on') else 'Disabled' }}
+            
+            THRESHOLDS:
+            • Min Download: {{ states('input_number.minimum_download_speed') }}Mbps
+            • Min Upload: {{ states('input_number.minimum_upload_speed') }}Mbps
+            • Max Latency: {{ states('input_number.maximum_ping_threshold') }}ms
+            • Timeout: {{ states('input_number.connection_timeout_threshold') }}s
+            
+            {% if is_state('input_boolean.metrofibre_complaint_mode', 'on') %}
+            📝 METROFIBRE SUPPORT REFERENCE:
+            This automated report provides detailed technical information for Metrofibre support tickets.
+            
+            RECOMMENDED ACTIONS FOR METROFIBRE:
+            1. Check fiber line integrity
+            2. Verify Nokia router configuration
+            3. Test line speeds at exchange
+            4. Check for network congestion
+            5. Verify QoS settings
+            {% endif %}
+            
+            TIMESTAMPS:
+            • Issue Detected: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            • Last Speed Test: {{ states.sensor.cloudflare_speed_test_25mb_down.last_updated.strftime('%Y-%m-%d %H:%M:%S') if states.sensor.cloudflare_speed_test_25mb_down.last_updated else 'Unknown' }}
+            
+            System: Home Assistant @ 192.168.1.30:8123
+            Location: Middelburg, Mpumalanga, South Africa
+
+  # Disconnection alerts with immediate notification
+  - id: metrofibre_disconnection_alert
+    alias: "Metrofibre Disconnection Alert"
+    description: "Immediate alert for connection disconnections"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.connection_disconnected
+        to: 'on'
+    condition:
+      - condition: state
+        entity_id: input_boolean.disconnection_alerts
+        state: 'on'
+    action:
+      - service: notify.telegram
+        data:
+          title: "🚨 METROFIBRE DISCONNECTION"
+          message: |
+            Connection disconnection detected!
+            
+            🔴 STATUS: {{ states('sensor.connection_uptime_status') }}
+            🕒 Time: {{ now().strftime('%H:%M:%S') }}
+            
+            🔧 ROUTER: {{ 'Online' if is_state('binary_sensor.nokia_router_online', 'on') else 'OFFLINE' }}
+            🌐 INTERNET: {{ 'Connected' if is_state('binary_sensor.internet_connected', 'on') else 'DISCONNECTED' }}
+            
+            Checking for restoration...
+
+  # Connection restoration notification
+  - id: metrofibre_restoration_alert
+    alias: "Metrofibre Connection Restoration"
+    description: "Notify when connection is restored"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.connection_disconnected
+        to: 'off'
+        for:
+          seconds: 30
+    action:
+      - service: notify.telegram
+        data:
+          title: "✅ Metrofibre Connection Restored"
+          message: |
+            Connection has been restored!
+            
+            🟢 STATUS: {{ states('sensor.connection_uptime_status') }}
+            ⏱️ Restored: {{ now().strftime('%H:%M:%S') }}
+            
+            Running speed test to verify performance...
+      - delay:
+          seconds: 30
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.cloudflare_speed_test_25mb_down
+            - sensor.cloudflare_speed_test_10mb_up
+            - sensor.cloudflare_speed_test_latency
+
+  # Low speed alerts (configurable)
+  - id: metrofibre_low_speed_alert
+    alias: "Metrofibre Low Speed Alert"
+    description: "Alert when speeds are significantly below thresholds"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.speed_critically_low
+        to: 'on'
+        for:
+          minutes: 5
+    condition:
+      - condition: state
+        entity_id: input_boolean.low_speed_alerts
+        state: 'on'
+    action:
+      - service: notify.telegram
+        data:
+          title: "⚠️ Metrofibre Slow Speeds"
+          message: |
+            Internet speeds below thresholds:
+            
+            📉 CURRENT (Expected 500/500):
+            • Download: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps ({{ states('sensor.download_speed_performance') }}%)
+            • Upload: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps ({{ states('sensor.upload_speed_performance') }}%)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms
+            
+            📊 Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            🕒 Time: {{ now().strftime('%H:%M:%S') }}
+            {{ '🕘 Peak Hours Active' if states('sensor.peak_hours_status') == 'Active' else '' }}
+
+  # Daily Metrofibre performance report
+  - id: daily_metrofibre_report
+    alias: "Daily Metrofibre Performance Report"
+    description: "Comprehensive daily report of Metrofibre performance"
+    trigger:
+      - platform: time
+        at: "22:00:00"  # 10 PM daily report
+    condition:
+      - condition: state
+        entity_id: input_boolean.internet_monitoring_enabled
+        state: 'on'
+    action:
+      - service: notify.email_ha
+        data:
+          title: "📊 Daily Metrofibre Performance Report - {{ now().strftime('%Y-%m-%d') }}"
+          message: |
+            DAILY METROFIBRE PERFORMANCE SUMMARY
+            Report Date: {{ now().strftime('%Y-%m-%d') }}
+            Service: 500/500 Mbps Fiber
+            Provider: Metrofibre
+            
+            📈 PERFORMANCE OVERVIEW:
+            • Fiber Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            • Connection Status: {{ states('sensor.metrofibre_connection_status') }}
+            • Download Performance: {{ states('sensor.download_speed_performance') }}% of contracted
+            • Upload Performance: {{ states('sensor.upload_speed_performance') }}% of contracted
+            • Connection Uptime: {{ states('sensor.connection_uptime_status') }}
+            
+            🌐 CURRENT SPEEDS:
+            • Download: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps (Contract: 500Mbps)
+            • Upload: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps (Contract: 500Mbps)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms
+            • Jitter: {{ states('sensor.cloudflare_speed_test_jitter') }}ms
+            • Packet Loss: {{ states('sensor.connection_packet_loss') }}%
+            
+            🔧 NOKIA ROUTER STATUS (192.168.1.1):
+            • Model: Beacon 2 (ALCL)
+            • Connectivity: {{ 'Online' if is_state('binary_sensor.nokia_router_online', 'on') else 'Issues Detected' }}
+            • Response Time: {{ states('sensor.nokia_router_ping') }}ms
+            • Hardware: 3FE49294CEAA
+            • Software: 3FE49334JJKJ24
+            
+            🌐 NETWORK DIAGNOSTICS:
+            • Google DNS (8.8.8.8): {{ states('sensor.google_dns_ping') }}ms
+            • Cloudflare DNS (1.1.1.1): {{ states('sensor.cloudflare_dns_ping') }}ms
+            • MTN DNS: {{ states('sensor.mtn_dns_ping') }}ms
+            • SAIX: {{ states('sensor.saix_ping') }}ms
+            • Internet Route Hops: {{ states('sensor.internet_route_hops') }}
+            
+            📊 MONITORING CONFIGURATION:
+            • Test Interval: {{ states('sensor.current_test_interval') }} minutes
+            • Monitoring Mode: {{ states('input_select.monitoring_mode') }}
+            • Peak Hours: {{ states('input_select.peak_hours_definition') }}
+            • Peak Hours Status: {{ states('sensor.peak_hours_status') }}
+            
+            ⚠️ ISSUES DETECTED TODAY:
+            • Speed Critically Low: {{ 'YES' if is_state('binary_sensor.speed_critically_low', 'on') else 'No' }}
+            • High Latency: {{ 'YES' if is_state('binary_sensor.fiber_latency_high', 'on') else 'No' }}
+            • Poor Quality: {{ 'YES' if is_state('binary_sensor.fiber_quality_poor', 'on') else 'No' }}
+            • Packet Loss: {{ 'YES' if is_state('binary_sensor.packet_loss_detected', 'on') else 'No' }}
+            • Disconnections: {{ 'YES' if is_state('binary_sensor.connection_disconnected', 'on') else 'No' }}
+            • Metrofibre Issues: {{ 'YES' if is_state('binary_sensor.metrofibre_issue_detected', 'on') else 'No' }}
+            
+            🎯 CONFIGURED THRESHOLDS:
+            • Min Download Speed: {{ states('input_number.minimum_download_speed') }}Mbps
+            • Min Upload Speed: {{ states('input_number.minimum_upload_speed') }}Mbps
+            • Max Latency: {{ states('input_number.maximum_ping_threshold') }}ms
+            • Connection Timeout: {{ states('input_number.connection_timeout_threshold') }}s
+            
+            🔧 ALERT SETTINGS:
+            • Low Speed Alerts: {{ 'Enabled' if is_state('input_boolean.low_speed_alerts', 'on') else 'Disabled' }}
+            • Disconnection Alerts: {{ 'Enabled' if is_state('input_boolean.disconnection_alerts', 'on') else 'Disabled' }}
+            • Peak Hours Monitoring: {{ 'Enabled' if is_state('input_boolean.peak_hours_monitoring', 'on') else 'Disabled' }}
+            • Complaint Mode: {{ 'ACTIVE' if is_state('input_boolean.metrofibre_complaint_mode', 'on') else 'Inactive' }}
+            
+            📍 LOCATION & SYSTEM:
+            • Location: Middelburg, Mpumalanga, South Africa
+            • Home Assistant: 192.168.1.30:8123
+            • Router IP: 192.168.1.1
+            • Provider: Metrofibre (Fiber)
+            
+            📅 RECOMMENDATIONS:
+            {% if states('sensor.fiber_network_quality_score') | float(100) < 80 %}
+            • Investigate fiber quality issues - score below 80%
+            {% endif %}
+            {% if is_state('binary_sensor.speed_critically_low', 'on') %}
+            • Contact Metrofibre support - speeds consistently below thresholds
+            {% endif %}
+            {% if is_state('binary_sensor.packet_loss_detected', 'on') %}
+            • Check fiber line integrity - packet loss detected
+            {% endif %}
+            {% if states('sensor.cloudflare_speed_test_latency') | float(0) > 20 %}
+            • Investigate latency issues - should be <20ms for fiber
+            {% endif %}
+            
+            Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Next Report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 22:00') }}
+
+# Scripts for Metrofibre network management
+script:
+  # Comprehensive Metrofibre network diagnostic
+  comprehensive_metrofibre_diagnostic:
+    alias: "Comprehensive Metrofibre Network Diagnostic"
+    sequence:
+      - service: notify.telegram
+        data:
+          title: "🔍 Starting Metrofibre Diagnostic"
+          message: "Comprehensive network diagnostic initiated. This will take about 2 minutes..."
+      
+      # Update all connectivity sensors
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.nokia_router_ping
+            - sensor.google_dns_ping
+            - sensor.cloudflare_dns_ping
+            - sensor.mtn_dns_ping
+            - sensor.saix_ping
+            - sensor.connection_packet_loss
+            - sensor.internet_route_hops
+      
+      - delay:
+          seconds: 30
+      
+      # Run comprehensive speed test
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.cloudflare_speed_test_25mb_down
+            - sensor.cloudflare_speed_test_10mb_up
+            - sensor.cloudflare_speed_test_latency
+            - sensor.cloudflare_speed_test_jitter
+      
+      - delay:
+          seconds: 60
+      
+      # Generate detailed report
+      - service: notify.telegram
+        data:
+          title: "📊 Metrofibre Diagnostic Complete"
+          message: |
+            Comprehensive diagnostic completed:
+            
+            🌐 SPEED TEST RESULTS:
+            • Download: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps ({{ states('sensor.download_speed_performance') }}%)
+            • Upload: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps ({{ states('sensor.upload_speed_performance') }}%)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms
+            • Jitter: {{ states('sensor.cloudflare_speed_test_jitter') }}ms
+            • Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            
+            🔧 CONNECTIVITY TESTS:
+            • Nokia Router: {{ states('sensor.nokia_router_ping') }}ms
+            • Google DNS: {{ states('sensor.google_dns_ping') }}ms
+            • Cloudflare DNS: {{ states('sensor.cloudflare_dns_ping') }}ms
+            • MTN DNS: {{ states('sensor.mtn_dns_ping') }}ms
+            • SAIX: {{ states('sensor.saix_ping') }}ms
+            • Packet Loss: {{ states('sensor.connection_packet_loss') }}%
+            • Route Hops: {{ states('sensor.internet_route_hops') }}
+            
+            📊 STATUS: {{ states('sensor.metrofibre_connection_status') }}
+            🕒 Completed: {{ now().strftime('%H:%M:%S') }}
+
+      - service: notify.email_ha
+        data:
+          title: "🔍 Metrofibre Network Diagnostic Report - {{ now().strftime('%Y-%m-%d %H:%M') }}"
+          message: |
+            COMPREHENSIVE METROFIBRE NETWORK DIAGNOSTIC
+            
+            SPEED TEST RESULTS:
+            • Download Speed: {{ states('sensor.cloudflare_speed_test_25mb_down') }}Mbps ({{ states('sensor.download_speed_performance') }}% of 500Mbps contract)
+            • Upload Speed: {{ states('sensor.cloudflare_speed_test_10mb_up') }}Mbps ({{ states('sensor.upload_speed_performance') }}% of 500Mbps contract)
+            • Latency: {{ states('sensor.cloudflare_speed_test_latency') }}ms
+            • Jitter: {{ states('sensor.cloudflare_speed_test_jitter') }}ms
+            • Fiber Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            
+            CONNECTIVITY ANALYSIS:
+            • Nokia Router (192.168.1.1): {{ states('sensor.nokia_router_ping') }}ms
+            • Google DNS (8.8.8.8): {{ states('sensor.google_dns_ping') }}ms
+            • Cloudflare DNS (1.1.1.1): {{ states('sensor.cloudflare_dns_ping') }}ms
+            • MTN DNS (196.11.240.241): {{ states('sensor.mtn_dns_ping') }}ms
+            • SAIX (196.21.0.35): {{ states('sensor.saix_ping') }}ms
+            • Packet Loss Percentage: {{ states('sensor.connection_packet_loss') }}%
+            • Internet Route Hops: {{ states('sensor.internet_route_hops') }}
+            
+            SYSTEM STATUS:
+            • Connection Status: {{ states('sensor.metrofibre_connection_status') }}
+            • Uptime Status: {{ states('sensor.connection_uptime_status') }}
+            • Router Online: {{ 'Yes' if is_state('binary_sensor.nokia_router_online', 'on') else 'No' }}
+            • Internet Connected: {{ 'Yes' if is_state('binary_sensor.internet_connected', 'on') else 'No' }}
+            
+            ISSUE DETECTION:
+            • Speed Critically Low: {{ 'YES' if is_state('binary_sensor.speed_critically_low', 'on') else 'No' }}
+            • Fiber Latency High: {{ 'YES' if is_state('binary_sensor.fiber_latency_high', 'on') else 'No' }}
+            • Fiber Quality Poor: {{ 'YES' if is_state('binary_sensor.fiber_quality_poor', 'on') else 'No' }}
+            • Packet Loss Detected: {{ 'YES' if is_state('binary_sensor.packet_loss_detected', 'on') else 'No' }}
+            • Connection Disconnected: {{ 'YES' if is_state('binary_sensor.connection_disconnected', 'on') else 'No' }}
+            
+            Diagnostic completed: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+  # Enable Metrofibre complaint documentation mode
+  enable_metrofibre_complaint_mode:
+    alias: "Enable Metrofibre Complaint Documentation"
+    sequence:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.metrofibre_complaint_mode
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Documentation (3 min intervals)"
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.low_speed_alerts
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.disconnection_alerts
+      - service: notify.telegram
+        data:
+          title: "📝 Metrofibre Complaint Mode ENABLED"
+          message: |
+            Metrofibre complaint documentation mode activated:
+            
+            ✅ Enhanced monitoring every 3 minutes
+            ✅ All alerts enabled
+            ✅ Detailed logging for support tickets
+            ✅ Comprehensive email reports
+            ✅ Performance threshold tracking
+            
+            All issues will be documented for Metrofibre support.
+
+  # Disable Metrofibre complaint documentation mode
+  disable_metrofibre_complaint_mode:
+    alias: "Disable Metrofibre Complaint Documentation"
+    sequence:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.metrofibre_complaint_mode
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Normal (30 min intervals)"
+      - service: notify.telegram
+        data:
+          title: "📝 Metrofibre Complaint Mode DISABLED"
+          message: "Complaint documentation mode deactivated. Monitoring returned to normal intervals."
+
+  # Quick Metrofibre speed test
+  quick_metrofibre_speed_test:
+    alias: "Quick Metrofibre Speed Test"
+    sequence:
+      - service: notify.telegram
+        data:
+          title: "⚡ Running Speed Test..."
+          message: "Metrofibre speed test initiated..."
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.cloudflare_speed_test_25mb_down
+            - sensor.cloudflare_speed_test_10mb_up
+            - sensor.cloudflare_speed_test_latency
+            - sensor.cloudflare_speed_test_jitter
+      - delay:
+          seconds: 45
+      - service: notify.telegram
+        data:
+          title: "📊 Metrofibre Speed Test Results"
+          message: |
+            Speed test completed:
+            
+            {{ states('sensor.metrofibre_performance_summary') }}
+            
+            📊 Performance vs Contract (500/500):
+            • Download: {{ states('sensor.download_speed_performance') }}%
+            • Upload: {{ states('sensor.upload_speed_performance') }}%
+            • Quality Score: {{ states('sensor.fiber_network_quality_score') }}%
+            • Status: {{ states('sensor.metrofibre_connection_status') }}
+            
+            🕒 {{ now().strftime('%H:%M:%S') }}
+
+  # Set monitoring mode
+  set_monitoring_mode_normal:
+    alias: "Set Normal Monitoring Mode"
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Normal (30 min intervals)"
+
+  set_monitoring_mode_enhanced:
+    alias: "Set Enhanced Monitoring Mode"
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Enhanced (15 min intervals)"
+
+  set_monitoring_mode_intensive:
+    alias: "Set Intensive Monitoring Mode"
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Intensive (10 min intervals)"
+
+  set_monitoring_mode_troubleshooting:
+    alias: "Set Troubleshooting Mode"
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.monitoring_mode
+        data:
+          option: "Troubleshooting (5 min intervals)"
+
+  # Nokia router reboot (if SNMP/API available)
+  # Note: This requires additional configuration based on router capabilities
+  nokia_router_status_check:
+    alias: "Nokia Router Status Check"
+    sequence:
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.nokia_router_ping
+      - delay:
+          seconds: 10
+      - service: notify.telegram
+        data:
+          title: "🔧 Nokia Router Status"
+          message: |
+            Nokia Beacon 2 Router Status:
+            
+            📍 IP: 192.168.1.1
+            🏷️ Model: ALCL Beacon 2
+            💾 Hardware: 3FE49294CEAA
+            🔧 Software: 3FE49334JJKJ24
+            
+            📊 Response: {{ states('sensor.nokia_router_ping') }}ms
+            🔗 Status: {{ 'Online' if is_state('binary_sensor.nokia_router_online', 'on') else 'OFFLINE' }}
+            ⏱️ Checked: {{ now().strftime('%H:%M:%S') }}
+
+# Utility meters for tracking usage patterns
+utility_meter:
+  # Track speed test frequency for analysis
+  daily_speed_tests:
+    source: sensor.cloudflare_speed_test_25mb_down
+    cycle: daily
+    
+  weekly_speed_tests:
+    source: sensor.cloudflare_speed_test_25mb_down
+    cycle: weekly
