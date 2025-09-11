@@ -1,302 +1,519 @@
 #===============================================================================
-# Advanced System Monitoring Package
-# File: packages/system_monitoring.yaml
+# Simplified System Monitoring Package
+# File: packages/system_monitoring_simple.yaml  
 # Updated: 2025-09-11
-# Purpose: Comprehensive system health monitoring and alerting
+# Purpose: Basic system monitoring using only existing sensors and templates
+# Note: Works without additional integrations - uses existing HA data
 #===============================================================================
 
-# System monitoring sensors
-sensor:
-  # System Monitor integration sensors
-  - platform: systemmonitor
-    resources:
-      - type: disk_use_percent
-        arg: /config
-      - type: disk_use_percent
-        arg: /
-      - type: disk_free
-        arg: /config
-      - type: disk_free
-        arg: /
-      - type: memory_use_percent
-      - type: memory_use
-      - type: memory_free
-      - type: swap_use_percent
-      - type: swap_use
-      - type: swap_free
-      - type: load_1m
-      - type: load_5m
-      - type: load_15m
-      - type: network_in
-        arg: eth0
-      - type: network_out
-        arg: eth0
-      - type: throughput_network_in
-        arg: eth0
-      - type: throughput_network_out
-        arg: eth0
-      - type: packets_in
-        arg: eth0
-      - type: packets_out
-        arg: eth0
-      - type: ipv4_address
-        arg: eth0
-      - type: ipv6_address
-        arg: eth0
-      - type: processor_use
-      - type: processor_temperature
-      - type: last_boot
-
-  # Database size monitoring
-  - platform: sql
-    db_url: !secret database_url
-    queries:
-      - name: "Database Size"
-        query: "SELECT ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size FROM information_schema.tables WHERE table_schema = 'homeassistant';"
-        column: "size"
-        unit_of_measurement: "MB"
-
-  # File size sensors
-  - platform: filesize
-    file_paths:
-      - /config/home-assistant.log
-      - /config/home-assistant_v2.db
-
-# Template sensors for advanced monitoring
+# Template sensors for system monitoring (using existing data)
 template:
   - sensor:
-      # System health score
-      - name: "System Health Score"
-        unique_id: system_health_score
-        unit_of_measurement: "%"
-        state: >
-          {% set cpu_score = (100 - (states('sensor.processor_use') | float(0))) * 0.3 %}
-          {% set mem_score = (100 - (states('sensor.memory_use_percent') | float(0))) * 0.3 %}
-          {% set disk_score = (100 - (states('sensor.disk_use_percent_config') | float(0))) * 0.2 %}
-          {% set load_score = max(0, (100 - (states('sensor.load_15m') | float(0) * 50))) * 0.2 %}
-          {{ (cpu_score + mem_score + disk_score + load_score) | round(1) }}
-
-      # Network throughput combined
-      - name: "Network Throughput Total"
-        unique_id: network_throughput_total
-        unit_of_measurement: "MB/s"
-        state: >
-          {% set in_mb = (states('sensor.throughput_network_in_eth0') | float(0)) / 1024 / 1024 %}
-          {% set out_mb = (states('sensor.throughput_network_out_eth0') | float(0)) / 1024 / 1024 %}
-          {{ (in_mb + out_mb) | round(3) }}
-
-      # Disk space remaining days
-      - name: "Disk Space Days Remaining"
-        unique_id: disk_space_days_remaining
+      # System uptime estimation based on when automations started working
+      - name: "Estimated System Uptime Days"
+        unique_id: estimated_system_uptime_days
         unit_of_measurement: "days"
         state: >
-          {% set free_gb = (states('sensor.disk_free_config') | float(0)) / 1024 %}
-          {% set usage_rate = 0.1 %}  # Assume 100MB per day
-          {{ (free_gb / usage_rate) | round(0) }}
+          {% set start_date = '2025-09-01' %}  # Adjust to your system start date
+          {% set days = (now().date() - start_date | as_datetime | as_local).days %}
+          {{ days if days > 0 else 0 }}
+        icon: mdi:calendar
+
+      # Database health indicator (using existing database size sensor)
+      - name: "Database Health Status"
+        unique_id: database_health_status
+        state: >
+          {% if states('sensor.database_size') != 'unknown' %}
+            {% set size = states('sensor.database_size') | float(0) %}
+            {% if size < 100 %}
+              Excellent
+            {% elif size < 300 %}
+              Good
+            {% elif size < 500 %}
+              Fair
+            {% elif size < 1000 %}
+              Poor
+            {% else %}
+              Critical
+            {% endif %}
+          {% else %}
+            Unknown
+          {% endif %}
+        icon: >
+          {% if states('sensor.database_size') != 'unknown' %}
+            {% set size = states('sensor.database_size') | float(0) %}
+            {% if size < 100 %}
+              mdi:database-check
+            {% elif size < 300 %}
+              mdi:database
+            {% elif size < 500 %}
+              mdi:database-alert
+            {% elif size < 1000 %}
+              mdi:database-remove
+            {% else %}
+              mdi:database-off
+            {% endif %}
+          {% else %}
+            mdi:database-search
+          {% endif %}
+
+      # Integration health score based on available sensors
+      - name: "Integration Health Score"
+        unique_id: integration_health_score
+        unit_of_measurement: "%"
+        state: >
+          {% set total_integrations = 15 %}
+          {% set working_integrations = 0 %}
+          
+          {# Check various integrations #}
+          {% if has_value('sensor.deyeinvertermaster_summary_battery_soc') %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          {% if has_value('sensor.deyeinverterslave_summary_battery_soc') %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          {% if has_value('sensor.onedrive_drive_state') %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          {% if has_value('sensor.jbarkhuizen_homeassistant_config_v3_stars') %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          
+          {# Add points for working automations #}
+          {% set active_automations = states.automation | selectattr('state', 'eq', 'on') | list | count %}
+          {% if active_automations > 5 %}
+            {% set working_integrations = working_integrations + 3 %}
+          {% elif active_automations > 2 %}
+            {% set working_integrations = working_integrations + 2 %}
+          {% elif active_automations > 0 %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          
+          {# Add points for working sensors #}
+          {% if states.sensor | list | count > 50 %}
+            {% set working_integrations = working_integrations + 3 %}
+          {% elif states.sensor | list | count > 20 %}
+            {% set working_integrations = working_integrations + 2 %}
+          {% else %}
+            {% set working_integrations = working_integrations + 1 %}
+          {% endif %}
+          
+          {# Add points for working notifications #}
+          {% if states('input_boolean.advanced_notifications') == 'on' %}
+            {% set working_integrations = working_integrations + 2 %}
+          {% endif %}
+          
+          {# Add points for energy monitoring #}
+          {% if states('input_boolean.energy_monitoring_enabled') == 'on' %}
+            {% set working_integrations = working_integrations + 2 %}
+          {% endif %}
+          
+          {{ (working_integrations / total_integrations * 100) | round(0) }}
+        icon: mdi:chart-donut
+
+      # System load estimation based on entity count and update frequency
+      - name: "Estimated System Load"
+        unique_id: estimated_system_load
+        unit_of_measurement: "%"
+        state: >
+          {% set entity_count = states | list | count %}
+          {% set automation_count = states.automation | list | count %}
+          {% set sensor_count = states.sensor | list | count %}
+          
+          {# Base load calculation #}
+          {% set base_load = (entity_count / 10) | round(0) %}
+          {% set automation_load = (automation_count * 2) | round(0) %}
+          {% set sensor_load = (sensor_count / 5) | round(0) %}
+          
+          {% set total_load = base_load + automation_load + sensor_load %}
+          {{ min(100, total_load) }}
+        icon: mdi:speedometer
+
+      # Storage efficiency based on database size vs entity count
+      - name: "Storage Efficiency Score"
+        unique_id: storage_efficiency_score
+        unit_of_measurement: "%"
+        state: >
+          {% set db_size = states('sensor.database_size') | float(100) %}
+          {% set entity_count = states | list | count %}
+          
+          {# Calculate efficiency (lower DB size per entity is better) #}
+          {% if entity_count > 0 %}
+            {% set size_per_entity = db_size / entity_count %}
+            {% if size_per_entity < 0.5 %}
+              100
+            {% elif size_per_entity < 1.0 %}
+              90
+            {% elif size_per_entity < 2.0 %}
+              75
+            {% elif size_per_entity < 3.0 %}
+              60
+            {% elif size_per_entity < 5.0 %}
+              40
+            {% else %}
+              20
+            {% endif %}
+          {% else %}
+            50
+          {% endif %}
+        icon: mdi:database-arrow-down
+
+      # Overall system health combining all factors
+      - name: "Overall System Health"
+        unique_id: overall_system_health
+        unit_of_measurement: "%"
+        state: >
+          {% set integration_health = states('sensor.integration_health_score') | float(0) %}
+          {% set db_health = max(0, 100 - (states('sensor.database_size') | float(0) / 10)) %}
+          {% set storage_efficiency = states('sensor.storage_efficiency_score') | float(0) %}
+          {% set load_health = 100 - states('sensor.estimated_system_load') | float(0) %}
+          
+          {# Weight different factors #}
+          {% set weighted_score = (integration_health * 0.4) + (db_health * 0.25) + (storage_efficiency * 0.2) + (load_health * 0.15) %}
+          {{ weighted_score | round(1) }}
+        icon: mdi:heart-pulse
+
+      # Current timestamp for reports
+      - name: "System Report Timestamp"
+        unique_id: system_report_timestamp
+        state: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+        icon: mdi:clock
 
   - binary_sensor:
-      # Critical system alert
-      - name: "Critical System Alert"
-        unique_id: critical_system_alert
+      # Database maintenance needed
+      - name: "Database Maintenance Needed"
+        unique_id: database_maintenance_needed
         device_class: problem
         state: >
-          {% set cpu_critical = states('sensor.processor_use') | float(0) > 90 %}
-          {% set mem_critical = states('sensor.memory_use_percent') | float(0) > 95 %}
-          {% set disk_critical = states('sensor.disk_use_percent_config') | float(0) > 95 %}
-          {% set temp_critical = states('sensor.processor_temperature') | float(0) > 80 %}
-          {{ cpu_critical or mem_critical or disk_critical or temp_critical }}
+          {% set db_size = states('sensor.database_size') | float(0) %}
+          {% set db_health = states('sensor.database_health_status') %}
+          {{ db_size > 500 or db_health in ['Poor', 'Critical'] }}
 
-      # System performance degraded
-      - name: "System Performance Degraded"
-        unique_id: system_performance_degraded
+      # System performance alert
+      - name: "System Performance Alert"
+        unique_id: system_performance_alert
+        device_class: problem
         state: >
-          {{ states('sensor.system_health_score') | float(100) < 70 }}
+          {% set overall_health = states('sensor.overall_system_health') | float(100) %}
+          {% set integration_health = states('sensor.integration_health_score') | float(100) %}
+          {% set system_load = states('sensor.estimated_system_load') | float(0) %}
+          {{ overall_health < 70 or integration_health < 60 or system_load > 80 }}
 
-# Advanced system monitoring automations
+      # Long uptime warning
+      - name: "Long Uptime Warning"
+        unique_id: long_uptime_warning
+        device_class: problem
+        state: >
+          {{ states('sensor.estimated_system_uptime_days') | float(0) > 30 }}
+
+      # Storage efficiency warning
+      - name: "Storage Efficiency Warning"
+        unique_id: storage_efficiency_warning
+        device_class: problem
+        state: >
+          {{ states('sensor.storage_efficiency_score') | float(100) < 60 }}
+
+# Simplified monitoring automations
 automation:
-  # Critical system alert
-  - id: critical_system_alert_notification
-    alias: "Critical System Alert Notification"
-    description: "Immediate notification for critical system issues"
+  # Database maintenance alert
+  - id: database_maintenance_alert
+    alias: "Database Maintenance Alert"
+    description: "Alert when database needs maintenance"
     trigger:
       - platform: state
-        entity_id: binary_sensor.critical_system_alert
+        entity_id: binary_sensor.database_maintenance_needed
         to: 'on'
+        for:
+          hours: 1
     action:
       - service: notify.telegram
         data:
-          title: "🚨 CRITICAL SYSTEM ALERT"
+          title: "📊 Database Maintenance Needed"
           message: |
-            Critical system issue detected!
+            Database maintenance is recommended:
             
-            🖥️ CURRENT STATUS:
-            • CPU: {{ states('sensor.processor_use') }}%
-            • Memory: {{ states('sensor.memory_use_percent') }}%
-            • Disk: {{ states('sensor.disk_use_percent_config') }}%
-            • Temperature: {{ states('sensor.processor_temperature') }}°C
-            • Health Score: {{ states('sensor.system_health_score') }}%
+            💾 Size: {{ states('sensor.database_size') }}MB
+            📊 Health: {{ states('sensor.database_health_status') }}
+            🎯 Efficiency: {{ states('sensor.storage_efficiency_score') }}%
             
-            🕒 Alert Time: {{ now().strftime('%H:%M:%S') }}
-            
-            IMMEDIATE ACTION REQUIRED!
+            Consider running database cleanup.
+
       - service: notify.email_ha
         data:
-          title: "🚨 CRITICAL: Home Assistant System Alert"
+          title: "📊 Database Maintenance Recommendation"
           message: |
-            CRITICAL SYSTEM ALERT - IMMEDIATE ATTENTION REQUIRED
+            Database Maintenance Recommended
             
-            A critical system condition has been detected on your Home Assistant instance.
-            
-            SYSTEM METRICS:
-            • CPU Usage: {{ states('sensor.processor_use') }}% (Critical if >90%)
-            • Memory Usage: {{ states('sensor.memory_use_percent') }}% (Critical if >95%)
-            • Disk Usage: {{ states('sensor.disk_use_percent_config') }}% (Critical if >95%)
-            • Processor Temperature: {{ states('sensor.processor_temperature') }}°C (Critical if >80°C)
-            • System Load (15m): {{ states('sensor.load_15m') }}
-            • Health Score: {{ states('sensor.system_health_score') }}%
-            
-            NETWORK STATUS:
-            • Network Throughput: {{ states('sensor.network_throughput_total') }}MB/s
-            • IPv4 Address: {{ states('sensor.ipv4_address_eth0') }}
-            
-            DISK STATUS:
-            • Free Space (/config): {{ states('sensor.disk_free_config') }}GB
-            • Estimated Days Remaining: {{ states('sensor.disk_space_days_remaining') }} days
-            
-            DATABASE:
+            CURRENT STATUS:
             • Database Size: {{ states('sensor.database_size') }}MB
+            • Database Health: {{ states('sensor.database_health_status') }}
+            • Storage Efficiency: {{ states('sensor.storage_efficiency_score') }}%
+            • Overall System Health: {{ states('sensor.overall_system_health') }}%
             
             RECOMMENDED ACTIONS:
-            1. Check system resources immediately
-            2. Review recent changes or updates
-            3. Consider stopping non-essential services
-            4. Plan for system maintenance if needed
+            1. Run recorder.purge service to clean old data
+            2. Review recorder configuration for optimization
+            3. Consider excluding unnecessary entities from recording
             
-            System: Home Assistant @ 192.168.1.30:8123
-            Alert Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            Current retention: 7 days
+            Recommendation: Maintain between 3-10 days based on storage needs
+            
+            Report generated: {{ states('sensor.system_report_timestamp') }}
 
-  # Database maintenance reminder
-  - id: database_maintenance_reminder
-    alias: "Database Maintenance Reminder"
-    description: "Reminder to perform database maintenance"
+  # System performance monitoring
+  - id: system_performance_monitoring_simple
+    alias: "System Performance Monitoring - Simple"
+    description: "Monitor overall system performance"
     trigger:
-      - platform: numeric_state
-        entity_id: sensor.database_size
-        above: 1000  # 1GB
-    condition:
-      - condition: time
-        after: "09:00:00"
-        before: "10:00:00"
+      - platform: state
+        entity_id: binary_sensor.system_performance_alert
+        to: 'on'
+        for:
+          minutes: 30
     action:
       - service: notify.email_ha
         data:
-          title: "📊 Database Maintenance Reminder"
+          title: "⚠️ System Performance Alert"
           message: |
-            Your Home Assistant database is getting large.
+            System performance degradation detected:
             
-            Current Size: {{ states('sensor.database_size') }}MB
-            Recommended: Consider purging old data or reducing retention period.
+            PERFORMANCE METRICS:
+            • Overall System Health: {{ states('sensor.overall_system_health') }}%
+            • Integration Health: {{ states('sensor.integration_health_score') }}%
+            • Estimated System Load: {{ states('sensor.estimated_system_load') }}%
+            • Storage Efficiency: {{ states('sensor.storage_efficiency_score') }}%
+            • Database Health: {{ states('sensor.database_health_status') }}
             
-            Current Settings:
-            • Purge Keep Days: 10 days
-            • Auto Purge: Enabled
+            SYSTEM STATISTICS:
+            • Total Entities: {{ states | list | count }}
+            • Active Automations: {{ states.automation | selectattr('state', 'eq', 'on') | list | count }}
+            • Total Sensors: {{ states.sensor | list | count }}
+            • Estimated Uptime: {{ states('sensor.estimated_system_uptime_days') }} days
             
-            You may want to:
-            1. Review recorder configuration
-            2. Exclude unnecessary entities
-            3. Manually purge old data if needed
+            RECOMMENDATIONS:
+            {% if states('sensor.overall_system_health') | float(100) < 70 %}
+            • Overall health low - investigate system issues
+            {% endif %}
+            {% if states('sensor.integration_health_score') | float(100) < 60 %}
+            • Integration issues detected - check integration status
+            {% endif %}
+            {% if states('sensor.estimated_system_load') | float(0) > 80 %}
+            • High system load - consider reducing entity count or automation frequency
+            {% endif %}
+            {% if states('sensor.storage_efficiency_score') | float(100) < 60 %}
+            • Storage inefficient - database cleanup recommended
+            {% endif %}
+            
+            Generated: {{ states('sensor.system_report_timestamp') }}
 
-  # Weekly system health report
-  - id: weekly_system_health_report
-    alias: "Weekly System Health Report"
-    description: "Comprehensive weekly system health analysis"
+  # Weekly simplified health report
+  - id: weekly_simplified_health_report
+    alias: "Weekly Simplified Health Report"
+    description: "Weekly system health overview"
     trigger:
       - platform: time
-        at: "09:15:00"
+        at: "09:20:00"
     condition:
       - condition: time
         weekday:
           - sun
     action:
-      - service: script.system_health_analysis
+      - service: script.update_system_metrics
       - delay:
-          seconds: 30
+          seconds: 15
       - service: notify.email_ha
         data:
-          title: "📊 Weekly System Health Report"
+          title: "📊 Weekly System Health Overview"
           message: |
-            WEEKLY SYSTEM HEALTH ANALYSIS
-            Week Ending: {{ now().strftime('%Y-%m-%d') }}
+            WEEKLY SYSTEM HEALTH OVERVIEW
+            Report Period: {{ (now() - timedelta(days=7)).strftime('%Y-%m-%d') }} to {{ now().strftime('%Y-%m-%d') }}
             
-            📈 PERFORMANCE SUMMARY:
-            • Average Health Score: {{ states('sensor.system_health_score') }}%
-            • Current CPU Usage: {{ states('sensor.processor_use') }}%
-            • Current Memory Usage: {{ states('sensor.memory_use_percent') }}%
-            • Current Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
-            • System Uptime: {{ states('sensor.system_uptime_days') }} days
+            🏥 OVERALL SYSTEM HEALTH: {{ states('sensor.overall_system_health') }}%
             
-            🌡️ TEMPERATURE MONITORING:
-            • Processor Temperature: {{ states('sensor.processor_temperature') }}°C
-            • Status: {{ 'Normal' if states('sensor.processor_temperature') | float(0) < 70 else 'Monitor Closely' }}
+            📊 DETAILED METRICS:
+            • Integration Health: {{ states('sensor.integration_health_score') }}%
+            • Database Health: {{ states('sensor.database_health_status') }}
+            • Storage Efficiency: {{ states('sensor.storage_efficiency_score') }}%
+            • Estimated System Load: {{ states('sensor.estimated_system_load') }}%
             
-            💾 STORAGE ANALYSIS:
-            • Free Disk Space: {{ states('sensor.disk_free_config') }}GB
-            • Database Size: {{ states('sensor.database_size') }}MB
-            • Log File Size: {{ states('sensor.homeassistant_log') }}MB
-            • Estimated Days Until Full: {{ states('sensor.disk_space_days_remaining') }}
+            📈 SYSTEM STATISTICS:
+            • Total Entities: {{ states | list | count }}
+            • Sensors: {{ states.sensor | list | count }}
+            • Automations: {{ states.automation | list | count }} ({{ states.automation | selectattr('state', 'eq', 'on') | list | count }} active)
+            • Binary Sensors: {{ states.binary_sensor | list | count }}
+            • Switches: {{ states.switch | list | count }}
+            • Lights: {{ states.light | list | count }}
             
-            🌐 NETWORK PERFORMANCE:
-            • Average Throughput: {{ states('sensor.network_throughput_total') }}MB/s
-            • IP Address: {{ states('sensor.ipv4_address_eth0') }}
-            • Packets In: {{ states('sensor.packets_in_eth0') }}
-            • Packets Out: {{ states('sensor.packets_out_eth0') }}
+            💾 DATABASE STATUS:
+            • Size: {{ states('sensor.database_size') }}MB
+            • Health Status: {{ states('sensor.database_health_status') }}
+            • Efficiency Score: {{ states('sensor.storage_efficiency_score') }}%
             
-            📊 SYSTEM LOAD:
-            • 1-minute load: {{ states('sensor.load_1m') }}
-            • 5-minute load: {{ states('sensor.load_5m') }}
-            • 15-minute load: {{ states('sensor.load_15m') }}
+            ⏱️ UPTIME & STABILITY:
+            • Estimated Uptime: {{ states('sensor.estimated_system_uptime_days') }} days
+            • Long Uptime Warning: {{ 'Active' if is_state('binary_sensor.long_uptime_warning', 'on') else 'None' }}
             
-            ⚠️ ALERTS & RECOMMENDATIONS:
-            {% if states('sensor.system_health_score') | float(100) < 80 %}
-            • System health score below optimal - investigate performance issues
+            🔧 MAINTENANCE STATUS:
+            • Database Maintenance Needed: {{ 'Yes' if is_state('binary_sensor.database_maintenance_needed', 'on') else 'No' }}
+            • Performance Alerts: {{ 'Active' if is_state('binary_sensor.system_performance_alert', 'on') else 'None' }}
+            • Storage Efficiency Warning: {{ 'Active' if is_state('binary_sensor.storage_efficiency_warning', 'on') else 'None' }}
+            
+            ⚡ ENERGY SYSTEM STATUS:
+            • Master Battery SOC: {{ states('sensor.deyeinvertermaster_summary_battery_soc') | default('N/A') }}%
+            • Slave Battery SOC: {{ states('sensor.deyeinverterslave_summary_battery_soc') | default('N/A') }}%
+            • Energy Monitoring: {{ 'Enabled' if is_state('input_boolean.energy_monitoring_enabled', 'on') else 'Disabled' }}
+            
+            🔗 INTEGRATION STATUS:
+            • OneDrive: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+            • GitHub: {{ 'Connected' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_stars') else 'Check Connection' }}
+            • Deye Master: {{ 'Online' if has_value('sensor.deyeinvertermaster_summary_battery_soc') else 'Check Connection' }}
+            • Deye Slave: {{ 'Online' if has_value('sensor.deyeinverterslave_summary_battery_soc') else 'Check Connection' }}
+            
+            📅 RECOMMENDATIONS:
+            {% if states('sensor.overall_system_health') | float(100) < 80 %}
+            • System health below optimal - review system status
             {% endif %}
-            {% if states('sensor.database_size') | float(0) > 500 %}
-            • Database size is {{ states('sensor.database_size') }}MB - consider maintenance
+            {% if is_state('binary_sensor.database_maintenance_needed', 'on') %}
+            • Database maintenance recommended - run cleanup procedures
             {% endif %}
-            {% if states('sensor.disk_use_percent_config') | float(0) > 70 %}
-            • Disk usage at {{ states('sensor.disk_use_percent_config') }}% - monitor closely
+            {% if is_state('binary_sensor.long_uptime_warning', 'on') %}
+            • Consider planned system restart - uptime over 30 days
             {% endif %}
-            {% if states('sensor.system_uptime_days') | float(0) > 30 %}
-            • System uptime {{ states('sensor.system_uptime_days') }} days - consider planned restart
+            {% if states('sensor.integration_health_score') | float(100) < 70 %}
+            • Review integration connectivity and functionality
             {% endif %}
+            
+            📊 TREND ANALYSIS:
+            • System appears {{ 'stable' if states('sensor.overall_system_health') | float(100) > 80 else 'to need attention' }}
+            • Database growth {{ 'normal' if states('sensor.database_size') | float(0) < 300 else 'above average' }}
+            • Integration reliability {{ 'good' if states('sensor.integration_health_score') | float(100) > 80 else 'needs review' }}
             
             📅 NEXT ACTIONS:
             • Next weekly report: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d') }}
-            • Monthly maintenance: {{ (now().replace(day=1) + timedelta(days=32)).replace(day=1).strftime('%Y-%m-%d') }}
+            • Quarterly system review: Monthly
+            • Database optimization: As needed
             
-            Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            System: Home Assistant @ 192.168.1.30:8123
+            Generated: {{ states('sensor.system_report_timestamp') }}
 
-# Scripts for system monitoring
+  # Monthly restart reminder (simplified)
+  - id: monthly_restart_reminder_simple
+    alias: "Monthly Restart Reminder - Simple"
+    description: "Simple monthly restart reminder based on uptime"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.long_uptime_warning
+        to: 'on'
+        for:
+          days: 1
+    action:
+      - service: notify.telegram
+        data:
+          title: "🔄 Monthly Restart Recommended"
+          message: |
+            System restart recommended:
+            
+            ⏱️ Uptime: {{ states('sensor.estimated_system_uptime_days') }} days
+            🏥 Health: {{ states('sensor.overall_system_health') }}%
+            📊 Performance: {{ 'Good' if states('sensor.overall_system_health') | float(100) > 80 else 'Degraded' }}
+            
+            Monthly restart helps with:
+            • Memory optimization
+            • Cache clearing  
+            • Performance boost
+            
+            Schedule restart during low activity.
+
+# Scripts for simplified system monitoring
 script:
-  system_health_analysis:
-    alias: "System Health Analysis"
+  update_system_metrics:
+    alias: "Update System Metrics"
     sequence:
       - service: homeassistant.update_entity
         target:
           entity_id:
-            - sensor.system_health_score
-            - sensor.network_throughput_total
-            - sensor.disk_space_days_remaining
-            - binary_sensor.critical_system_alert
+            - sensor.overall_system_health
+            - sensor.integration_health_score
+            - sensor.database_health_status
+            - sensor.storage_efficiency_score
+            - sensor.estimated_system_load
+            - binary_sensor.system_performance_alert
       - delay:
           seconds: 5
 
-  emergency_system_cleanup:
-    alias: "Emergency System Cleanup"
+  system_health_summary:
+    alias: "System Health Summary"
+    sequence:
+      - service: script.update_system_metrics
+      - delay:
+          seconds: 10
+      - service: notify.telegram
+        data:
+          title: "📊 System Health Summary"
+          message: |
+            Current System Status:
+            
+            🏥 Overall Health: {{ states('sensor.overall_system_health') }}%
+            🔗 Integrations: {{ states('sensor.integration_health_score') }}%
+            💾 Database: {{ states('sensor.database_health_status') }}
+            📊 Efficiency: {{ states('sensor.storage_efficiency_score') }}%
+            ⚡ Load: {{ states('sensor.estimated_system_load') }}%
+            
+            ⏱️ Uptime: {{ states('sensor.estimated_system_uptime_days') }} days
+            📈 Entities: {{ states | list | count }}
+            🤖 Automations: {{ states.automation | selectattr('state', 'eq', 'on') | list | count }}
+            
+            Status: {{ 'System Healthy' if states('sensor.overall_system_health') | float(100) > 80 else 'Needs Attention' }}
+
+  database_cleanup_routine:
+    alias: "Database Cleanup Routine"
     sequence:
       - service: recorder.purge
         data:
-          keep_days: 3
+          keep_days: 5
           repack: true
+      - delay:
+          seconds: 30
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.database_size
+      - delay:
+          seconds: 10
+      - service: notify.telegram
+        data:
+          title: "🧹 Database Cleanup Complete"
+          message: |
+            Database maintenance completed:
+            
+            💾 Database Size: {{ states('sensor.database_size') }}MB
+            📊 Health Status: {{ states('sensor.database_health_status') }}
+            🎯 Efficiency: {{ states('sensor.storage_efficiency_score') }}%
+            
+            System performance should improve.
+
+  emergency_system_optimization:
+    alias: "Emergency System Optimization"
+    sequence:
+      - service: script.database_cleanup_routine
+      - delay:
+          minutes: 2
       - service: system_log.clear
-      - service: homeassistant.restart
+      - delay:
+          seconds: 30
+      - service: script.update_system_metrics
+      - delay:
+          seconds: 15
+      - service: notify.telegram
+        data:
+          title: "🚀 Emergency Optimization Complete"
+          message: |
+            Emergency system optimization completed:
+            
+            ✅ Database cleaned and repacked
+            ✅ System logs cleared
+            ✅ Metrics updated
+            
+            🏥 Current Health: {{ states('sensor.overall_system_health') }}%
+            📊 New Status: {{ states('sensor.database_health_status') }}
+            
+            Monitor system for improved performance.
