@@ -1,6 +1,6 @@
 #===============================================================================
 # Security & Backup Management Package
-# File: packages/security_backup.yaml  
+# File: packages/security_backup.yaml
 # Updated: 2025-09-11
 # Purpose: Advanced security monitoring and automated backup management
 #===============================================================================
@@ -62,44 +62,44 @@ automation:
     trigger:
       - platform: state
         entity_id: binary_sensor.security_threat_detected
-        to: 'on'
+        to: "on"
     action:
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "🚨 SECURITY ALERT"
           message: |
             Security threat detected!
-            
+
             ⚠️ Multiple failed login attempts: {{ states('sensor.failed_login_attempts_today') }}
             🕒 Alert time: {{ now().strftime('%H:%M:%S') }}
             🌐 Check your router and firewall logs
-            
+
             Consider enabling additional security measures.
       - service: notify.email_ha
         data:
           title: "🔒 Security Alert - Multiple Failed Login Attempts"
           message: |
             SECURITY ALERT - Home Assistant Instance
-            
+
             Multiple failed login attempts detected on your Home Assistant instance.
-            
+
             THREAT DETAILS:
             • Failed attempts today: {{ states('sensor.failed_login_attempts_today') }}
             • System IP: 192.168.1.30:8123
             • Alert time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-            
+
             RECOMMENDED ACTIONS:
             1. Review authentication logs
             2. Check for unfamiliar IP addresses
             3. Consider changing passwords
             4. Enable two-factor authentication if not already active
             5. Review firewall and router security settings
-            
+
             SYSTEM STATUS:
             • Home Assistant Cloud: {{ 'Enabled' if is_state('binary_sensor.cloud_logged_in', 'on') else 'Disabled' }}
             • AdGuard Home: Active
             • Tailscale VPN: Connected
-            
+
             This is an automated security alert.
             Alert generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 
@@ -119,18 +119,18 @@ automation:
           - conditions:
               - condition: state
                 entity_id: binary_sensor.backup_health_status
-                state: 'on'
+                state: "on"
             sequence:
-              - service: notify.telegram
+              - service: telegram_bot.send_message
                 data:
                   title: "✅ Daily Backup Complete"
                   message: |
                     Daily backup verification successful!
-                    
+
                     💾 Local backup: {{ states('sensor.backup_state') | title }}
                     ☁️ Cloud backup: {{ states('sensor.onedrive_drive_state') | title }}
                     📊 Cloud space: {{ (states('sensor.onedrive_remaining_storage') | int(0) / 1000000000) | round(1) }}GB free
-                    
+
                     All backups are healthy.
         # Backup issues detected
         default:
@@ -139,24 +139,24 @@ automation:
               title: "⚠️ Backup Verification Issues Detected"
               message: |
                 Daily backup verification has detected issues.
-                
+
                 BACKUP STATUS:
                 • Local Backup: {{ states('sensor.backup_state') | title }}
                 • Cloud Backup: {{ states('sensor.onedrive_drive_state') | title }}
                 • Backup Health: {{ 'Good' if is_state('binary_sensor.backup_health_status', 'on') else 'Issues Detected' }}
-                
+
                 CLOUD STORAGE:
                 • Total Storage: {{ (states('sensor.onedrive_total_available_storage') | int(0) / 1000000000) | round(1) }}GB
                 • Used Storage: {{ (states('sensor.onedrive_used_storage') | int(0) / 1000000000) | round(1) }}GB
                 • Remaining: {{ (states('sensor.onedrive_remaining_storage') | int(0) / 1000000000) | round(1) }}GB
                 • Usage: {{ states('sensor.onedrive_storage_percentage_calculated') }}%
-                
+
                 RECOMMENDED ACTIONS:
                 1. Check backup configurations
                 2. Verify OneDrive connectivity
                 3. Ensure sufficient cloud storage space
                 4. Review backup logs for errors
-                
+
                 Verification time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 
   # Weekly security audit
@@ -177,48 +177,48 @@ automation:
           message: |
             WEEKLY SECURITY AUDIT REPORT
             Audit Period: {{ (now() - timedelta(days=7)).strftime('%Y-%m-%d') }} to {{ now().strftime('%Y-%m-%d') }}
-            
+
             🔐 AUTHENTICATION SECURITY:
             • Failed login attempts this week: {{ states('sensor.failed_login_attempts_today') }}
             • Security threats detected: {{ 'Yes' if is_state('binary_sensor.security_threat_detected', 'on') else 'None' }}
             • Home Assistant Cloud: {{ 'Connected' if is_state('binary_sensor.cloud_logged_in', 'on') else 'Not Connected' }}
-            
+
             🌐 NETWORK SECURITY:
             • Current IP Address: {{ states('sensor.ipv4_address_eth0') }}
             • AdGuard Home: Active (DNS filtering enabled)
             • Tailscale VPN: Connected
             • Trusted Proxies: 192.168.1.0/24 subnet
-            
+
             💾 BACKUP SECURITY:
             • Local Backups: {{ states('sensor.backup_state') | title }}
             • Cloud Backups: {{ states('sensor.onedrive_drive_state') | title }}
             • Backup Health: {{ 'Good' if is_state('binary_sensor.backup_health_status', 'on') else 'Needs Attention' }}
             • OneDrive Storage: {{ states('sensor.onedrive_storage_percentage_calculated') }}% used
-            
+
             🔧 SYSTEM ACCESS:
             • SSH Access: Configured via Add-on
             • VS Code Server: Active (GitHub connected)
             • Node-RED: Active (password protected)
             • Grafana: Active (authentication enabled)
-            
+
             📱 INTEGRATIONS SECURITY:
             • GitHub Integration: Active (read-only)
             • Telegram Bot: Active (encrypted)
             • Email Services: Active (TLS enabled)
             • MQTT Broker: Active (authentication enabled)
-            
+
             ⚠️ SECURITY RECOMMENDATIONS:
             1. Regular password updates (quarterly)
             2. Monitor failed login attempts
             3. Keep Home Assistant updated
             4. Review integration permissions
             5. Maintain secure backup practices
-            
+
             📅 NEXT SECURITY TASKS:
             • Next audit: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d') }}
             • Password review: Monthly
             • Security update check: Weekly
-            
+
             Audit completed: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 
 # Scripts for security and backup management
@@ -240,7 +240,7 @@ script:
         data:
           name: "Emergency_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
       - service: script.force_onedrive_sync
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "💾 Emergency Backup Initiated"
           message: "Emergency backup has been started. This may take several minutes to complete."
@@ -250,14 +250,14 @@ script:
     sequence:
       - service: input_boolean.turn_on
         entity_id: input_boolean.maintenance_mode
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "🔒 Security Lockdown Activated"
           message: |
             Security lockdown has been activated.
-            
+
             🚫 Non-essential automations disabled
             🔐 System in maintenance mode
             📧 Admin notifications enabled
-            
+
             Review security logs and take appropriate action.

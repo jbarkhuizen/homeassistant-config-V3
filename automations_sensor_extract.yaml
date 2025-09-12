@@ -1,119 +1,102 @@
-- id: extract_sensors_daily
-  alias: "Extract Sensors Daily Report"
-  description: "Generate daily sensor extraction report at 09:00"
+#===============================================================================
+# Daily Sensor Report Automation - Single Optimized Version (Corrected)
+# File: automations_sensor_extract.yaml  
+# Updated: 2025-09-12
+# Purpose: Single comprehensive daily report at 09:00
+#===============================================================================
+
+- id: comprehensive_daily_report_optimized
+  alias: "Daily System Report - Comprehensive (09:00)"
+  description: "Single optimized daily report covering all system aspects"
   trigger:
     - platform: time
       at: "09:00:00"
   condition: []
   action:
-    - service: shell_command.extract_sensors
-      data: {}
-    - delay:
-        seconds: 30
-    - service: notify.telegram
-      data:
-        title: "📊 Sensor Report Generated"
-        message: >
-          Daily sensor extraction completed!
-          
-          📈 Report generated at: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-          📁 Location: /config/sensor_reports/
-          
-          Check your reports folder for detailed CSV, JSON, and summary files.
-
-  # Daily Sensor Report Automation - Add to automations.yaml
-# This automation will run daily at 09:00 and email you the sensor reports
-
-- id: daily_sensor_report_09h00_final
-  alias: "Daily Sensor Report at 09:00 - Final Version"
-  description: "Generate and email daily sensor extraction report at 09:00 to jbarkhuizen@gmail.com"
-  trigger:
-    - platform: time
-      at: "09:00:00"
-  condition: []
-  action:
-    # Step 1: Generate the sensor report
+    # Step 1: Update all system metrics first
+    - service: homeassistant.update_entity
+      target:
+        entity_id:
+          - sensor.active_automations_count
+          - sensor.disabled_automations_count
+          - sensor.system_uptime_days
+    
+    # Step 2: Generate sensor report
     - service: shell_command.extract_sensors
       data: {}
     
-    # Step 2: Wait for script to complete
+    # Step 3: Wait for report generation to complete
     - delay:
-        seconds: 45
+        seconds: 60
     
-    # Step 3: Send email notification with summary
-    - service: notify.email_sensors
+    # Step 4: Send single comprehensive email
+    - service: notify.email_ha
       data:
-        title: "📊 Daily Home Assistant Sensor Report - {{ now().strftime('%Y-%m-%d') }}"
+        title: "🏠 Daily Smart Home Report - {{ now().strftime('%A, %B %d, %Y') }}"
         message: |
-          Daily Home Assistant Sensor Report
+          SMART HOME DAILY REPORT
           Generated: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
+          Location: Pierre van Ryneveld, Gauteng (192.168.1.30:8123)
           
-          🏠 Home Assistant Instance: 192.168.1.30:8123
-          
-          📊 SENSOR EXTRACTION COMPLETED ✅
-          Full sensor report generated and saved to /config/sensor_reports/
-          
-          📁 Files Generated:
-          • sensors_report_{{ now().strftime('%Y%m%d_090000') }}.csv
-          • sensors_report_{{ now().strftime('%Y%m%d_090000') }}.json  
-          • sensors_summary_{{ now().strftime('%Y%m%d_090000') }}.md
-          
-          🔍 INTEGRATION STATUS:
-          • Deye/Sunsunk Inverters: {{ 'Online' if states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] else 'Check Required' }}
-          • SONOFF Devices: Active
-          • TUYA Devices: Active  
-          • OneDrive Integration: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
-          • InfluxDB: Recording
-          • Telegram: Active
-          • Email Services: ✅ Operational
-          
-          ⚡ ENERGY MONITORING:
+          ⚡ ENERGY SYSTEM STATUS:
           • Master Battery SOC: {{ states('sensor.deyeinvertermaster_summary_battery_soc') | default('N/A') }}%
           • Slave Battery SOC: {{ states('sensor.deyeinverterslave_summary_battery_soc') | default('N/A') }}%
           • Daily Solar Generation: {{ states('sensor.deyeinvertermaster_summary_day_pv_generation') | default('N/A') }} kWh
+          • Grid Status: {{ 'Online' if states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] else 'Check Required' }}
           
-          ☁️ ONEDRIVE STATUS:
-          • Storage Used: {{ states('sensor.onedrive_used_storage') | default('N/A') }}GB
-          • Storage Available: {{ states('sensor.onedrive_total_available_storage') | default('N/A') }}GB
-          • Drive State: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          🤖 AUTOMATION SYSTEM:
+          • Active Automations: {{ states('sensor.active_automations_count') | default('N/A') }}
+          • Disabled Automations: {{ states('sensor.disabled_automations_count') | default('N/A') }}
+          • System Uptime: {{ states('sensor.system_uptime_days') | default('N/A') }} days
+          • System Health: {{ 'Optimal' if states('sensor.active_automations_count') | int(0) > 0 else 'Check Required' }}
           
-          📈 SYSTEM HEALTH:
-          • Processor Usage: {{ states('sensor.processor_use') | default('N/A') }}%
+          💾 SYSTEM PERFORMANCE:
+          • CPU Usage: {{ states('sensor.processor_use') | default('N/A') }}%
           • Memory Usage: {{ states('sensor.memory_use_percent') | default('N/A') }}%
-          • System Uptime: {{ relative_time(states.sensor.last_boot.last_changed) if states('sensor.last_boot') != 'unavailable' else 'N/A' }}
+          • Database Size: {{ states('sensor.database_size') | default('N/A') }}MB
           
-          🔗 Access Reports:
-          File Editor → /config/sensor_reports/
+          🔗 INTEGRATION STATUS:
+          • SONOFF Devices: Connected
+          • TUYA Devices: Connected
+          • OneDrive: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          • InfluxDB: Recording
+          • Telegram: ✅ Active
+          • Email Services: ✅ Operational
           
-          This automated report monitors your dual Sunsunk inverters, SONOFF/TUYA devices, 
-          OneDrive integration, and overall system health.
+          📊 SENSOR REPORTS:
+          • Report Files: ✅ Generated (/config/sensor_reports/)
+          • CSV Export: sensors_report_{{ now().strftime('%Y%m%d_090000') }}.csv
+          • JSON Export: sensors_report_{{ now().strftime('%Y%m%d_090000') }}.json
+          • Summary: sensors_summary_{{ now().strftime('%Y%m%d_090000') }}.md
+          
+          ⚙️ RECOMMENDED ACTIONS:
+          {% if states('sensor.deyeinvertermaster_summary_battery_soc') | float(100) < 30 %}
+          • ⚠️ Monitor battery levels - Master at {{ states('sensor.deyeinvertermaster_summary_battery_soc') }}%
+          {% endif %}
+          {% if states('sensor.processor_use') | float(0) > 70 %}
+          • 🖥️ Check system performance - CPU usage at {{ states('sensor.processor_use') }}%
+          {% endif %}
+          {% if states('sensor.system_uptime_days') | int(0) > 30 %}
+          • 🔄 Consider planned system restart - uptime {{ states('sensor.system_uptime_days') }} days
+          {% endif %}
+          
+          🔗 Quick Access:
+          • Dashboard: http://192.168.1.30:8123
+          • File Editor: /config/sensor_reports/
+          
+          Next report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}
           
           Best regards,
-          Home Assistant Sensor Report System
+          Home Assistant Automation System
     
-    # Step 4: Send Telegram confirmation  
-    - service: notify.telegram
+    # Step 5: Send Telegram confirmation (CORRECTED SERVICE)
+    - service: telegram_bot.send_message
       data:
-        title: "📊 Daily Sensor Report Sent"
+        target: !secret telegram_chat_id
+        title: "📊 Daily Report Sent"
         message: |
-          Daily sensor report generated and emailed at {{ now().strftime('%H:%M:%S') }}
+          Daily system report completed at {{ now().strftime('%H:%M:%S') }}
           
-          📧 Email sent to: jbarkhuizen@gmail.com
-          📁 Reports saved: /config/sensor_reports/
-          ✅ Automation completed successfully    
-
-- id: daily_sensor_report_simple
-  alias: "Daily Sensor Report - Simple"
-  trigger:
-        - platform: time
-          at: "09:00:00"
-  action:
-        - service: shell_command.extract_sensors
-        - delay: 45
-        - service: notify.email_ha
-          data:
-            title: "Daily HA Sensor Report - {{ now().strftime('%Y-%m-%d') }}"
-            message: |
-              Daily sensor report generated at {{ now().strftime('%H:%M:%S') }}
-              Files saved to: /config/sensor_reports/
-              System: 192.168.1.30:8123
+          📧 Email sent successfully
+          📁 Reports saved to /config/sensor_reports/
+          ✅ All systems operational

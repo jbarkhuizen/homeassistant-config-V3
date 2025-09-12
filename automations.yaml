@@ -1,322 +1,379 @@
+#=====================================
 - id: send_test_email_daily
   alias: Send Test Email Daily at 09:00
   description: Daily Email functionality test
+  #=====================================
   trigger:
-  - platform: time
-    at: 09:00:00
+    - platform: time
+      at: 09:00:00
   condition: []
   action:
-  - delay: 30
-  - service: notify.email_ha
-    data:
-      title: "\U0001F3E0 Daily Home Assistant Status - {{ now().strftime('%Y-%m-%d')
-        }}"
-      message: "Daily Home Assistant Status Report\nGenerated: {{ now().strftime('%Y-%m-%d
-        at %H:%M:%S') }}\n\n\U0001F3E0 System: Home Assistant (192.168.1.30:8123)\n\n\U0001F4CA
-        SYSTEM HEALTH:\n• Status: {{ 'Online ✅' if states('sensor.johanba_server_status')
-        == 'good' else 'Check Required ⚠️' }}\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
-        | default('N/A') }}°C\n• CPU Usage: {{ states('sensor.johanba_server_cpu_usage')
-        | default('N/A') }}%\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
-        | default('N/A') }}%\n• Uptime: {{ states('sensor.johanba_server_uptime')
-        | default('N/A') }}\n\n☁️ ONEDRIVE STATUS:\n• Storage Used: {{ states('sensor.onedrive_used_storage')
-        | default('N/A') }}GB\n• Total Available: {{ states('sensor.onedrive_total_available_storage')
-        | default('N/A') }}GB\n• Drive State: {{ states('sensor.onedrive_drive_state')
-        | default('N/A') | title }}\n\n\U0001F50B ENERGY MONITORING:\n• OneDrive Usage:
-        {{ states('sensor.onedrive_usage_percentage') | default('N/A') }}%\n\n\U0001F310
-        NETWORK STATUS:\n• WAN Status: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status',
-        'on') else 'Check Connection ⚠️' }}\n• External IP: {{ states('sensor.archer_d2_external_ip')
-        | default('N/A') }}\n\n\U0001F4C8 ADDONS STATUS:\n• File Editor: {{ 'Running
-        ✅' if is_state('binary_sensor.file_editor_running', 'on') else 'Stopped ❌'
-        }}\n• Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
-        'on') else 'Stopped ❌' }}\n• Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running',
-        'on') else 'Stopped ❌' }}\n\nThis automated report confirms your email notifications
-        are working correctly.\n\nBest regards,\nHome Assistant Automation System\n"
+    - delay: 30
+    - service: notify.email_ha
+      data:
+        title:
+          "\U0001F3E0 Daily Home Assistant Status - {{ now().strftime('%Y-%m-%d')
+          }}"
+        message:
+          "Daily Home Assistant Status Report\nGenerated: {{ now().strftime('%Y-%m-%d
+          at %H:%M:%S') }}\n\n\U0001F3E0 System: Home Assistant (192.168.1.30:8123)\n\n\U0001F4CA
+          SYSTEM HEALTH:\n• Status: {{ 'Online ✅' if states('sensor.johanba_server_status')
+          == 'good' else 'Check Required ⚠️' }}\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
+          | default('N/A') }}°C\n• CPU Usage: {{ states('sensor.johanba_server_cpu_usage')
+          | default('N/A') }}%\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
+          | default('N/A') }}%\n• Uptime: {{ states('sensor.johanba_server_uptime')
+          | default('N/A') }}\n\n☁️ ONEDRIVE STATUS:\n• Storage Used: {{ states('sensor.onedrive_used_storage')
+          | default('N/A') }}GB\n• Total Available: {{ states('sensor.onedrive_total_available_storage')
+          | default('N/A') }}GB\n• Drive State: {{ states('sensor.onedrive_drive_state')
+          | default('N/A') | title }}\n\n\U0001F50B ENERGY MONITORING:\n• OneDrive Usage:
+          {{ states('sensor.onedrive_usage_percentage') | default('N/A') }}%\n\n\U0001F310
+          NETWORK STATUS:\n• WAN Status: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status',
+          'on') else 'Check Connection ⚠️' }}\n• External IP: {{ states('sensor.archer_d2_external_ip')
+          | default('N/A') }}\n\n\U0001F4C8 ADDONS STATUS:\n• File Editor: {{ 'Running
+          ✅' if is_state('binary_sensor.file_editor_running', 'on') else 'Stopped ❌'
+          }}\n• Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
+          'on') else 'Stopped ❌' }}\n• Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running',
+          'on') else 'Stopped ❌' }}\n\nThis automated report confirms your email notifications
+          are working correctly.\n\nBest regards,\nHome Assistant Automation System\n"
+#=====================================
 - id: weekly_system_report
   alias: Weekly System Report - Sunday 09:00
   description: Comprehensive weekly system report
+  #=====================================
   trigger:
-  - platform: time
-    at: 09:00:00
+    - platform: time
+      at: 09:00:00
   condition:
-  - condition: time
-    weekday:
-    - sun
+    - condition: time
+      weekday:
+        - sun
   action:
-  - service: notify.email_ha
-    data:
-      title: "\U0001F4CA Weekly Home Assistant System Report - {{ now().strftime('%Y-%m-%d')
-        }}"
-      message: "Weekly Home Assistant System Report\nWeek Ending: {{ now().strftime('%Y-%m-%d')
-        }}\n\n\U0001F3E0 SYSTEM OVERVIEW:\n• Instance: Home Assistant (192.168.1.30:8123)\n•
-        OS Version: {{ states('sensor.home_assistant_operating_system_version') |
-        default('N/A') }}\n• Core Version: Available in System Info\n\n\U0001F4CA
-        PERFORMANCE METRICS:\n• Server Status: {{ states('sensor.johanba_server_status')
-        | default('N/A') | title }}\n• Average CPU Usage: {{ states('sensor.johanba_server_cpu_usage')
-        | default('N/A') }}%\n• Average Memory Usage: {{ states('sensor.johanba_server_memory_usage')
-        | default('N/A') }}%\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
-        | default('N/A') }}°C\n\n\U0001F4BE STORAGE STATUS:\n• HA Disk Used: {{ states('sensor.home_assistant_host_disk_used')
-        | default('N/A') }}GB\n• HA Disk Free: {{ states('sensor.home_assistant_host_disk_free')
-        | default('N/A') }}GB\n• OneDrive Used: {{ states('sensor.onedrive_used_storage')
-        | default('N/A') }}GB\n• OneDrive Free: {{ states('sensor.onedrive_remaining_storage')
-        | default('N/A') }}GB\n\n\U0001F50C ADDON STATUS:\n• InfluxDB: Installed ✅\n•
-        Grafana: Installed ✅\n• Node-RED: Installed ✅\n• Mosquitto: Installed ✅\n•
-        Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
-        'on') else 'Check Status ⚠️' }}\n\n\U0001F310 INTEGRATIONS:\n• GitHub: {{
-        'Connected ✅' if states('sensor.jbarkhuizen_automation_code_stars') != 'unavailable'
-        else 'Check Connection ⚠️' }}\n• OneDrive: {{ 'Connected ✅' if states('sensor.onedrive_drive_state')
-        != 'unavailable' else 'Check Connection ⚠️' }}\n• Telegram: {{ 'Configured
-        ✅' if states('binary_sensor.telegram_bot_connected') == 'on' else 'Check Bot
-        ⚠️' }}\n\n\U0001F4F1 NOTIFICATIONS:\n• Email: ✅ Working (you're receiving
-        this!)\n• Telegram: Check daily messages for status\n\n\U0001F527 RECOMMENDATIONS:\n•
-        Regular backups are configured\n• System monitoring is active\n• All critical
-        services monitored\n\nNext weekly report: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d')
-        }}\n\nBest regards,\nHome Assistant Weekly Report System\n"
-  - delay: 60
+    - service: notify.email_ha
+      data:
+        title:
+          "\U0001F4CA Weekly Home Assistant System Report - {{ now().strftime('%Y-%m-%d')
+          }}"
+        message:
+          "Weekly Home Assistant System Report\nWeek Ending: {{ now().strftime('%Y-%m-%d')
+          }}\n\n\U0001F3E0 SYSTEM OVERVIEW:\n• Instance: Home Assistant (192.168.1.30:8123)\n•
+          OS Version: {{ states('sensor.home_assistant_operating_system_version') |
+          default('N/A') }}\n• Core Version: Available in System Info\n\n\U0001F4CA
+          PERFORMANCE METRICS:\n• Server Status: {{ states('sensor.johanba_server_status')
+          | default('N/A') | title }}\n• Average CPU Usage: {{ states('sensor.johanba_server_cpu_usage')
+          | default('N/A') }}%\n• Average Memory Usage: {{ states('sensor.johanba_server_memory_usage')
+          | default('N/A') }}%\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
+          | default('N/A') }}°C\n\n\U0001F4BE STORAGE STATUS:\n• HA Disk Used: {{ states('sensor.home_assistant_host_disk_used')
+          | default('N/A') }}GB\n• HA Disk Free: {{ states('sensor.home_assistant_host_disk_free')
+          | default('N/A') }}GB\n• OneDrive Used: {{ states('sensor.onedrive_used_storage')
+          | default('N/A') }}GB\n• OneDrive Free: {{ states('sensor.onedrive_remaining_storage')
+          | default('N/A') }}GB\n\n\U0001F50C ADDON STATUS:\n• InfluxDB: Installed ✅\n•
+          Grafana: Installed ✅\n• Node-RED: Installed ✅\n• Mosquitto: Installed ✅\n•
+          Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
+          'on') else 'Check Status ⚠️' }}\n\n\U0001F310 INTEGRATIONS:\n• GitHub: {{
+          'Connected ✅' if states('sensor.jbarkhuizen_automation_code_stars') != 'unavailable'
+          else 'Check Connection ⚠️' }}\n• OneDrive: {{ 'Connected ✅' if states('sensor.onedrive_drive_state')
+          != 'unavailable' else 'Check Connection ⚠️' }}\n• Telegram: {{ 'Configured
+          ✅' if states('binary_sensor.telegram_bot_connected') == 'on' else 'Check Bot
+          ⚠️' }}\n\n\U0001F4F1 NOTIFICATIONS:\n• Email: ✅ Working (you're receiving
+          this!)\n• Telegram: Check daily messages for status\n\n\U0001F527 RECOMMENDATIONS:\n•
+          Regular backups are configured\n• System monitoring is active\n• All critical
+          services monitored\n\nNext weekly report: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d')
+          }}\n\nBest regards,\nHome Assistant Weekly Report System\n"
+    - delay: 60
+#=====================================
 - id: startup_email_notification
-  alias: 'Email : Home Assistant Startup Notification'
+  alias: "Email : Home Assistant Startup Notification"
   description: Send comprehensive email when HA starts
+  #=====================================
   triggers:
-  - trigger: homeassistant
-    event: start
+    - trigger: homeassistant
+      event: start
   actions:
-  - delay:
-      minutes: 2
-  - action: notify.email_ha
-    data:
-      title: "\U0001F3E0 Home Assistant Startup Complete - {{ now().strftime('%Y-%m-%d
-        %H:%M:%S') }}"
-      message: "Home Assistant Startup Notification\n====================================\n\n\U0001F550
-        RESTART DETAILS:\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S')
-        }}\n• Server: 192.168.1.30:8123\n• Previous Uptime: {{ relative_time(states.sensor.last_boot.last_changed)
-        if states('sensor.last_boot') != 'unavailable' else 'Unknown' }}\n\n\U0001F5A5️
-        SYSTEM STATUS:\n• Home Assistant Core: {{ states('sensor.home_assistant_core_cpu_percent')
-        | default('N/A') }}% CPU\n• Supervisor: {{ states('sensor.home_assistant_supervisor_cpu_percent')
-        | default('N/A') }}% CPU\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
-        | default('N/A') }}°C\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
-        | default('N/A') }}%\n• Server Status: {{ states('sensor.johanba_server_status')
-        | default('N/A') | title }}\n\n\U0001F4CA VERSION INFORMATION:\n• HA OS Version:
-        {{ states('sensor.home_assistant_operating_system_version') | default('N/A')
-        }}\n• Latest Available: {{ states('sensor.home_assistant_operating_system_newest_version')
-        | default('N/A') }}\n• Update Available: {{ 'Yes ⚠️' if states('sensor.home_assistant_operating_system_version')
-        != states('sensor.home_assistant_operating_system_newest_version') else 'No
-        ✅' }}\n\n\U0001F50C ADDON STATUS:\n• File Editor: {{ 'Running ✅' if is_state('binary_sensor.file_editor_running',
-        'on') else 'Stopped ❌' }}\n• Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
-        'on') else 'Stopped ❌' }}\n• Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running',
-        'on') else 'Stopped ❌' }}\n\n\U0001F4BE STORAGE STATUS:\n• HA Disk Used: {{
-        states('sensor.home_assistant_host_disk_used') | default('N/A') }}GB / {{
-        states('sensor.home_assistant_host_disk_total') | default('N/A') }}GB\n• HA
-        Disk Free: {{ states('sensor.home_assistant_host_disk_free') | default('N/A')
-        }}GB\n• OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') | default('N/A')
-        }}%\n• OneDrive State: {{ states('sensor.onedrive_drive_state') | default('N/A')
-        | title }}\n\n\U0001F310 NETWORK STATUS:\n• WAN Connection: {{ 'Connected
-        ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected
-        ❌' }}\n• External IP: {{ states('sensor.archer_d2_external_ip_2') | default('N/A')
-        }}\n\n\U0001F4C8 BACKUP STATUS:\n• Last Backup: {{ states('sensor.backup_last_successful_automatic_backup')
-        | default('N/A') }}\n• Next Backup: {{ states('sensor.backup_next_scheduled_automatic_backup')
-        | default('N/A') }}\n• Backup Status: {{ states('sensor.backup_backup_manager_state')
-        | default('N/A') | title }}\n\n\U0001F50D POTENTIAL ISSUES DETECTED:\n{% set
-        issues = [] %}\n{% if states('sensor.johanba_server_system_temperature')|float(0)
-        > 60 %}\n  {% set issues = issues + ['High system temperature: ' + states('sensor.johanba_server_system_temperature')
-        + '°C'] %}\n{% endif %}\n{% if states('sensor.johanba_server_memory_usage')|float(0)
-        > 80 %}\n  {% set issues = issues + ['High memory usage: ' + states('sensor.johanba_server_memory_usage')
-        + '%'] %}\n{% endif %}\n{% if not is_state('binary_sensor.archer_d2_wan_status',
-        'on') %}\n  {% set issues = issues + ['Network connection issue detected']
-        %}\n{% endif %}\n{% if states('sensor.home_assistant_operating_system_version')
-        != states('sensor.home_assistant_operating_system_newest_version') %}\n  {%
-        set issues = issues + ['Home Assistant OS update available'] %}\n{% endif
-        %}\n{% if states('sensor.onedrive_usage_percentage')|float(0) > 85 %}\n  {%
-        set issues = issues + ['OneDrive storage usage high: ' + states('sensor.onedrive_usage_percentage')
-        + '%'] %}\n{% endif %}\n{% if issues|length > 0 %}\n  {% for issue in issues
-        %}\n• {{ issue }}\n  {% endfor %}\n{% else %}\n• No issues detected ✅\n{%
-        endif %}\n\n\U0001F4E7 This automated message confirms Home Assistant has
-        restarted successfully.\nAll critical systems are being monitored.\n\nDashboard:
-        http://192.168.1.30:8123\n\nBest regards,\nHome Assistant Startup Monitor\n"
-- id: '1757592604267'
-  alias: 'Telegram : Home Assistant Startup Notification'
-  description: ''
+    - delay:
+        minutes: 2
+    - action: notify.email_ha
+      data:
+        title:
+          "\U0001F3E0 Home Assistant Startup Complete - {{ now().strftime('%Y-%m-%d
+          %H:%M:%S') }}"
+        message:
+          "Home Assistant Startup Notification\n====================================\n\n\U0001F550
+          RESTART DETAILS:\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S')
+          }}\n• Server: 192.168.1.30:8123\n• Previous Uptime: {{ relative_time(states.sensor.last_boot.last_changed)
+          if states('sensor.last_boot') != 'unavailable' else 'Unknown' }}\n\n\U0001F5A5️
+          SYSTEM STATUS:\n• Home Assistant Core: {{ states('sensor.home_assistant_core_cpu_percent')
+          | default('N/A') }}% CPU\n• Supervisor: {{ states('sensor.home_assistant_supervisor_cpu_percent')
+          | default('N/A') }}% CPU\n• System Temperature: {{ states('sensor.johanba_server_system_temperature')
+          | default('N/A') }}°C\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
+          | default('N/A') }}%\n• Server Status: {{ states('sensor.johanba_server_status')
+          | default('N/A') | title }}\n\n\U0001F4CA VERSION INFORMATION:\n• HA OS Version:
+          {{ states('sensor.home_assistant_operating_system_version') | default('N/A')
+          }}\n• Latest Available: {{ states('sensor.home_assistant_operating_system_newest_version')
+          | default('N/A') }}\n• Update Available: {{ 'Yes ⚠️' if states('sensor.home_assistant_operating_system_version')
+          != states('sensor.home_assistant_operating_system_newest_version') else 'No
+          ✅' }}\n\n\U0001F50C ADDON STATUS:\n• File Editor: {{ 'Running ✅' if is_state('binary_sensor.file_editor_running',
+          'on') else 'Stopped ❌' }}\n• Code Server: {{ 'Running ✅' if is_state('binary_sensor.studio_code_server_running',
+          'on') else 'Stopped ❌' }}\n• Terminal SSH: {{ 'Running ✅' if is_state('binary_sensor.terminal_ssh_running',
+          'on') else 'Stopped ❌' }}\n\n\U0001F4BE STORAGE STATUS:\n• HA Disk Used: {{
+          states('sensor.home_assistant_host_disk_used') | default('N/A') }}GB / {{
+          states('sensor.home_assistant_host_disk_total') | default('N/A') }}GB\n• HA
+          Disk Free: {{ states('sensor.home_assistant_host_disk_free') | default('N/A')
+          }}GB\n• OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') | default('N/A')
+          }}%\n• OneDrive State: {{ states('sensor.onedrive_drive_state') | default('N/A')
+          | title }}\n\n\U0001F310 NETWORK STATUS:\n• WAN Connection: {{ 'Connected
+          ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected
+          ❌' }}\n• External IP: {{ states('sensor.archer_d2_external_ip_2') | default('N/A')
+          }}\n\n\U0001F4C8 BACKUP STATUS:\n• Last Backup: {{ states('sensor.backup_last_successful_automatic_backup')
+          | default('N/A') }}\n• Next Backup: {{ states('sensor.backup_next_scheduled_automatic_backup')
+          | default('N/A') }}\n• Backup Status: {{ states('sensor.backup_backup_manager_state')
+          | default('N/A') | title }}\n\n\U0001F50D POTENTIAL ISSUES DETECTED:\n{% set
+          issues = [] %}\n{% if states('sensor.johanba_server_system_temperature')|float(0)
+          > 60 %}\n  {% set issues = issues + ['High system temperature: ' + states('sensor.johanba_server_system_temperature')
+          + '°C'] %}\n{% endif %}\n{% if states('sensor.johanba_server_memory_usage')|float(0)
+          > 80 %}\n  {% set issues = issues + ['High memory usage: ' + states('sensor.johanba_server_memory_usage')
+          + '%'] %}\n{% endif %}\n{% if not is_state('binary_sensor.archer_d2_wan_status',
+          'on') %}\n  {% set issues = issues + ['Network connection issue detected']
+          %}\n{% endif %}\n{% if states('sensor.home_assistant_operating_system_version')
+          != states('sensor.home_assistant_operating_system_newest_version') %}\n  {%
+          set issues = issues + ['Home Assistant OS update available'] %}\n{% endif
+          %}\n{% if states('sensor.onedrive_usage_percentage')|float(0) > 85 %}\n  {%
+          set issues = issues + ['OneDrive storage usage high: ' + states('sensor.onedrive_usage_percentage')
+          + '%'] %}\n{% endif %}\n{% if issues|length > 0 %}\n  {% for issue in issues
+          %}\n• {{ issue }}\n  {% endfor %}\n{% else %}\n• No issues detected ✅\n{%
+          endif %}\n\n\U0001F4E7 This automated message confirms Home Assistant has
+          restarted successfully.\nAll critical systems are being monitored.\n\nDashboard:
+          http://192.168.1.30:8123\n\nBest regards,\nHome Assistant Startup Monitor\n"
+#=====================================
+- id: "1757592604267"
+  alias: "Telegram : Home Assistant Startup Notification"
+  description: ""
+  #=====================================
   triggers:
-  - trigger: homeassistant
-    event: start
+    - trigger: homeassistant
+      event: start
   conditions: []
   actions:
-  - action: telegram_bot.send_message
-    metadata: {}
-    data:
-      config_entry_id: 01K4W9K8EMD7CEB13ZY9093J7P
-      message: Home Assistant has Started
-      title: Home Assistant has Started
-      target:
-      - '6167623299'
+    - action: telegram_bot.send_message
+      metadata: {}
+      data:
+        config_entry_id: 01K4W9K8EMD7CEB13ZY9093J7P
+        message: Home Assistant has Started
+        title: Home Assistant has Started
+        target:
+          - "6167623299"
   mode: single
+#=====================================
 - id: telegram_startup_notification
   alias: Home Assistant Startup Telegram
   description: Send comprehensive Telegram message when HA starts
+  #=====================================
   triggers:
-  - trigger: homeassistant
-    event: start
+    - trigger: homeassistant
+      event: start
   actions:
-  - delay:
-      minutes: 2
-  - action: telegram_bot.send_message
-    data:
-      target: 6167623299
-      parse_mode: markdown
-      message: "*\U0001F3E0 Home Assistant Startup Complete*\n\n*\U0001F550 RESTART
-        DETAILS:*\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}\n•
-        Server: `192.168.1.30:8123`\n• Status: {{ states('sensor.johanba_server_status')
-        | default('N/A') | title }}\n\n*\U0001F5A5️ SYSTEM STATUS:*\n• HA Core CPU:
-        {{ states('sensor.home_assistant_core_cpu_percent') | default('N/A') }}%\n•
-        Supervisor CPU: {{ states('sensor.home_assistant_supervisor_cpu_percent')
-        | default('N/A') }}%\n• System Temp: {{ states('sensor.johanba_server_system_temperature')
-        | default('N/A') }}°C\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
-        | default('N/A') }}%\n\n*\U0001F4CA VERSION INFO:*\n• HA OS: {{ states('sensor.home_assistant_operating_system_version')
-        | default('N/A') }}\n• Latest: {{ states('sensor.home_assistant_operating_system_newest_version')
-        | default('N/A') }}\n• Update: {{ '⚠️ Available' if states('sensor.home_assistant_operating_system_version')
-        != states('sensor.home_assistant_operating_system_newest_version') else '✅
-        Current' }}\n\n*\U0001F50C ADDON STATUS:*\n• File Editor: {{ '✅' if is_state('binary_sensor.file_editor_running',
-        'on') else '❌' }}\n• Code Server: {{ '✅' if is_state('binary_sensor.studio_code_server_running',
-        'on') else '❌' }}\n• Terminal SSH: {{ '✅' if is_state('binary_sensor.terminal_ssh_running',
-        'on') else '❌' }}\n\n*\U0001F4BE STORAGE:*\n• HA Disk: {{ states('sensor.home_assistant_host_disk_used')
-        | default('N/A') }}GB / {{ states('sensor.home_assistant_host_disk_total')
-        | default('N/A') }}GB\n• OneDrive: {{ states('sensor.onedrive_usage_percentage')
-        | default('N/A') }}% ({{ states('sensor.onedrive_drive_state') | default('N/A')
-        | title }})\n\n*\U0001F310 NETWORK:*\n• WAN: {{ '✅ Connected' if is_state('binary_sensor.archer_d2_wan_status',
-        'on') else '❌ Disconnected' }}\n• IP: `{{ states('sensor.archer_d2_external_ip_2')
-        | default('N/A') }}`\n\n*\U0001F4C8 BACKUP:*\n• Last: {{ states('sensor.backup_last_successful_automatic_backup')
-        | default('N/A') }}\n• Status: {{ states('sensor.backup_backup_manager_state')
-        | default('N/A') | title }}\n\n*\U0001F50D ISSUES CHECK:*\n{% set issues =
-        [] %}\n{% if states('sensor.johanba_server_system_temperature')|float(0) >
-        60 %}\n  {% set issues = issues + ['\U0001F321️ High temp: ' + states('sensor.johanba_server_system_temperature')
-        + '°C'] %}\n{% endif %}\n{% if states('sensor.johanba_server_memory_usage')|float(0)
-        > 80 %}\n  {% set issues = issues + ['\U0001F4BE High memory: ' + states('sensor.johanba_server_memory_usage')
-        + '%'] %}\n{% endif %}\n{% if not is_state('binary_sensor.archer_d2_wan_status',
-        'on') %}\n  {% set issues = issues + ['\U0001F310 Network issue'] %}\n{% endif
-        %}\n{% if states('sensor.home_assistant_operating_system_version') != states('sensor.home_assistant_operating_system_newest_version')
-        %}\n  {% set issues = issues + ['\U0001F4CA HA update available'] %}\n{% endif
-        %}\n{% if states('sensor.onedrive_usage_percentage')|float(0) > 85 %}\n  {%
-        set issues = issues + ['☁️ OneDrive high: ' + states('sensor.onedrive_usage_percentage')
-        + '%'] %}\n{% endif %}\n{% if issues|length > 0 %}\n  {% for issue in issues
-        %}\n• {{ issue }}\n  {% endfor %}\n{% else %}\n• ✅ All systems normal\n{%
-        endif %}\n\n\U0001F3AF _Home Assistant startup complete - all systems monitored_\n"
+    - delay:
+        minutes: 2
+    - action: telegram_bot.send_message
+      data:
+        target: 6167623299
+        parse_mode: markdown
+        message:
+          "*\U0001F3E0 Home Assistant Startup Complete*\n\n*\U0001F550 RESTART
+          DETAILS:*\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}\n•
+          Server: `192.168.1.30:8123`\n• Status: {{ states('sensor.johanba_server_status')
+          | default('N/A') | title }}\n\n*\U0001F5A5️ SYSTEM STATUS:*\n• HA Core CPU:
+          {{ states('sensor.home_assistant_core_cpu_percent') | default('N/A') }}%\n•
+          Supervisor CPU: {{ states('sensor.home_assistant_supervisor_cpu_percent')
+          | default('N/A') }}%\n• System Temp: {{ states('sensor.johanba_server_system_temperature')
+          | default('N/A') }}°C\n• Memory Usage: {{ states('sensor.johanba_server_memory_usage')
+          | default('N/A') }}%\n\n*\U0001F4CA VERSION INFO:*\n• HA OS: {{ states('sensor.home_assistant_operating_system_version')
+          | default('N/A') }}\n• Latest: {{ states('sensor.home_assistant_operating_system_newest_version')
+          | default('N/A') }}\n• Update: {{ '⚠️ Available' if states('sensor.home_assistant_operating_system_version')
+          != states('sensor.home_assistant_operating_system_newest_version') else '✅
+          Current' }}\n\n*\U0001F50C ADDON STATUS:*\n• File Editor: {{ '✅' if is_state('binary_sensor.file_editor_running',
+          'on') else '❌' }}\n• Code Server: {{ '✅' if is_state('binary_sensor.studio_code_server_running',
+          'on') else '❌' }}\n• Terminal SSH: {{ '✅' if is_state('binary_sensor.terminal_ssh_running',
+          'on') else '❌' }}\n\n*\U0001F4BE STORAGE:*\n• HA Disk: {{ states('sensor.home_assistant_host_disk_used')
+          | default('N/A') }}GB / {{ states('sensor.home_assistant_host_disk_total')
+          | default('N/A') }}GB\n• OneDrive: {{ states('sensor.onedrive_usage_percentage')
+          | default('N/A') }}% ({{ states('sensor.onedrive_drive_state') | default('N/A')
+          | title }})\n\n*\U0001F310 NETWORK:*\n• WAN: {{ '✅ Connected' if is_state('binary_sensor.archer_d2_wan_status',
+          'on') else '❌ Disconnected' }}\n• IP: `{{ states('sensor.archer_d2_external_ip_2')
+          | default('N/A') }}`\n\n*\U0001F4C8 BACKUP:*\n• Last: {{ states('sensor.backup_last_successful_automatic_backup')
+          | default('N/A') }}\n• Status: {{ states('sensor.backup_backup_manager_state')
+          | default('N/A') | title }}\n\n*\U0001F50D ISSUES CHECK:*\n{% set issues =
+          [] %}\n{% if states('sensor.johanba_server_system_temperature')|float(0) >
+          60 %}\n  {% set issues = issues + ['\U0001F321️ High temp: ' + states('sensor.johanba_server_system_temperature')
+          + '°C'] %}\n{% endif %}\n{% if states('sensor.johanba_server_memory_usage')|float(0)
+          > 80 %}\n  {% set issues = issues + ['\U0001F4BE High memory: ' + states('sensor.johanba_server_memory_usage')
+          + '%'] %}\n{% endif %}\n{% if not is_state('binary_sensor.archer_d2_wan_status',
+          'on') %}\n  {% set issues = issues + ['\U0001F310 Network issue'] %}\n{% endif
+          %}\n{% if states('sensor.home_assistant_operating_system_version') != states('sensor.home_assistant_operating_system_newest_version')
+          %}\n  {% set issues = issues + ['\U0001F4CA HA update available'] %}\n{% endif
+          %}\n{% if states('sensor.onedrive_usage_percentage')|float(0) > 85 %}\n  {%
+          set issues = issues + ['☁️ OneDrive high: ' + states('sensor.onedrive_usage_percentage')
+          + '%'] %}\n{% endif %}\n{% if issues|length > 0 %}\n  {% for issue in issues
+          %}\n• {{ issue }}\n  {% endfor %}\n{% else %}\n• ✅ All systems normal\n{%
+          endif %}\n\n\U0001F3AF _Home Assistant startup complete - all systems monitored_\n"
+#=====================================
 - id: enhanced_daily_system_report_09h00
   alias: Enhanced Daily System Report at 09:00
-  description: Comprehensive daily system report with energy, automation, and system
+  description:
+    Comprehensive daily system report with energy, automation, and system
     health data
+  #=====================================
   trigger:
-  - platform: time
-    at: 09:00:00
+    - platform: time
+      at: 09:00:00
   condition:
-  - condition: state
-    entity_id: input_boolean.advanced_notifications
-    state: 'on'
+    - condition: state
+      entity_id: input_boolean.advanced_notifications
+      state: "on"
   action:
-  - service: homeassistant.update_entity
-    target:
-      entity_id:
-      - sensor.combined_solar_generation
-      - sensor.average_battery_soc
-      - sensor.active_automations_count
-      - sensor.system_uptime_days
-  - service: shell_command.extract_sensors
-    data: {}
-  - service: script.energy_system_status_report
-  - delay:
-      seconds: 60
-  - service: notify.email_ha
-    data:
-      title: "\U0001F4CA Daily Smart Home Report - {{ now().strftime('%A, %B %d, %Y')
-        }}"
-      message: "\U0001F3E0 SMART HOME DAILY REPORT\nGenerated: {{ now().strftime('%Y-%m-%d
-        at %H:%M:%S') }}\nLocation: Pierre van Ryneveld, Gauteng (192.168.1.30:8123)\n\n⚡
-        ENERGY SYSTEM STATUS:\n• Combined Solar: {{ states('sensor.combined_solar_generation')
-        }}W\n• Average Battery SOC: {{ states('sensor.average_battery_soc') }}%\n•
-        Master Battery: {{ states('sensor.deyeinvertermaster_summary_battery_soc')
-        }}%\n• Slave Battery: {{ states('sensor.deyeinverterslave_summary_battery_soc')
-        }}%\n• Grid Status: {{ states('sensor.grid_feed_status') }}\n• Energy Independence:
-        {{ states('sensor.energy_independence_percentage') }}%\n• Battery Health:
-        {{ 'Good' if is_state('binary_sensor.battery_system_healthy', 'on') else 'Check
-        Required' }}\n\n\U0001F916 AUTOMATION SYSTEM:\n• Active Automations: {{ states('sensor.active_automations_count')
-        }}\n• Disabled Automations: {{ states('sensor.disabled_automations_count')
-        }}\n• Last Triggered: {{ states('sensor.last_automation_triggered') }}\n•
-        Daily Triggers: {{ states('counter.daily_automations_triggered') }}\n• System
-        Health: {{ 'Optimal' if is_state('binary_sensor.system_health_status', 'on')
-        else 'Needs Attention' }}\n\n\U0001F5A5️ SYSTEM PERFORMANCE:\n• Uptime: {{
-        states('sensor.system_uptime_days') }} days\n• CPU Usage: {{ states('sensor.processor_use')
-        | default('N/A') }}%\n• Memory Usage: {{ states('sensor.memory_use_percent')
-        | default('N/A') }}%\n• Disk Usage: {{ states('sensor.disk_use_percent_config')
-        | default('N/A') }}%\n• Database Size: {{ states('sensor.database_size') |
-        default('N/A') }}MB\n\n\U0001F517 INTEGRATION STATUS:\n• InfluxDB: {{ 'Connected'
-        if has_value('sensor.influxdb_database_size') else 'Check Connection' }}\n•
-        OneDrive: {{ states('sensor.onedrive_drive_state') | default('N/A') | title
-        }}\n• GitHub: {{ 'Active' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_stars')
-        else 'Check Integration' }}\n• SONOFF Devices: Connected\n• TUYA Devices:
-        Connected\n• Telegram Bot: ✅ Active\n• Email Services: ✅ Active\n\n\U0001F4CA
-        WEATHER & ENVIRONMENT:\n• Weather: {{ state_attr('weather.home', 'temperature')
-        | default('N/A') }}°C\n• Conditions: {{ states('weather.home') | default('N/A')
-        | title }}\n• UV Index: {{ state_attr('weather.home', 'uv_index') | default('N/A')
-        }}\n\n\U0001F4C1 MAINTENANCE TASKS:\n• Sensor Report: ✅ Generated (/config/sensor_reports/)\n•
-        Daily Backup: {{ 'Complete' if has_value('sensor.backup_state') else 'Scheduled'
-        }}\n• Config Sync: {{ 'Up to date' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_latest_commit')
-        else 'Pending' }}\n• Maintenance Mode: {{ 'Active' if is_state('input_boolean.maintenance_mode',
-        'on') else 'Inactive' }}\n\n⚙️ RECOMMENDED ACTIONS:\n⚙️ RECOMMENDED ACTIONS:\n{%
-        if states('sensor.average_battery_soc') | float(100) < 30 %}\n• ⚠️ Monitor
-        battery levels - currently at {{ states('sensor.average_battery_soc') }}%\n{%
-        endif %}\n{% if states('sensor.processor_use') | float(0) > 70 %}\n• \U0001F5A5️
-        Check system performance - CPU usage at {{ states('sensor.processor_use')
-        }}%\n{% endif %}\n{% if states('sensor.disabled_automations_count') | int(0)
-        > 0 %}\n• \U0001F916 Review {{ states('sensor.disabled_automations_count')
-        }} disabled automations\n{% endif %}\n{% if states('sensor.system_uptime_days')
-        | int(0) > 30 %}\n• \U0001F504 Consider planned system restart - uptime {{
-        states('sensor.system_uptime_days') }} days\n{% endif %}\n\n\U0001F4C8 YESTERDAY'S
-        HIGHLIGHTS:\n• Solar Generation: {{ states('sensor.daily_solar_production')
-        | default('N/A') }}kWh\n• Grid Import: {{ states('sensor.daily_grid_import')
-        | default('N/A') }}kWh\n• Automation Triggers: {{ states('counter.daily_automations_triggered')
-        }}\n• System Availability: 99.9%\n\n\U0001F517 Quick Links:\n• Dashboard:
-        http://192.168.1.30:8123\n• Grafana: http://192.168.1.30:3000\n• Node-RED:
-        http://192.168.1.30:1880\n\nReport generated by Home Assistant V3.2\nNext
-        report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}\n"
-  - service: notify.telegram
-    data:
-      title: "\U0001F3E0 Daily Summary"
-      message: "Good morning! Here's your smart home summary:\n\n⚡ Energy: {{ states('sensor.average_battery_soc')
-        }}% battery\n\U0001F31E Solar: {{ states('sensor.combined_solar_generation')
-        }}W\n\U0001F916 Automations: {{ states('sensor.active_automations_count')
-        }} active\n\U0001F5A5️ System: {{ states('sensor.system_uptime_days') }} days
-        uptime\n\n{% if states('sensor.average_battery_soc') | float(100) < 25 %}\n⚠️
-        Battery low - {{ states('sensor.average_battery_soc') }}%\n{% elif states('sensor.combined_solar_generation')
-        | float(0) > 5000 %}\n☀️ Excellent solar conditions today!\n{% endif %}\n\nFull
-        report sent via email.\n"
-  - service: counter.reset
-    entity_id: counter.daily_automations_triggered
-- id: '1757668937096'
+    - service: homeassistant.update_entity
+      target:
+        entity_id:
+          - sensor.combined_solar_generation
+          - sensor.average_battery_soc
+          - sensor.active_automations_count
+          - sensor.system_uptime_days
+    - service: shell_command.extract_sensors
+      data: {}
+    - service: script.energy_system_status_report
+    - delay:
+        seconds: 60
+    - service: notify.email_ha
+      data:
+        title:
+          "\U0001F4CA Daily Smart Home Report - {{ now().strftime('%A, %B %d, %Y')
+          }}"
+        message:
+          "\U0001F3E0 SMART HOME DAILY REPORT\nGenerated: {{ now().strftime('%Y-%m-%d
+          at %H:%M:%S') }}\nLocation: Pierre van Ryneveld, Gauteng (192.168.1.30:8123)\n\n⚡
+          ENERGY SYSTEM STATUS:\n• Combined Solar: {{ states('sensor.combined_solar_generation')
+          }}W\n• Average Battery SOC: {{ states('sensor.average_battery_soc') }}%\n•
+          Master Battery: {{ states('sensor.deyeinvertermaster_summary_battery_soc')
+          }}%\n• Slave Battery: {{ states('sensor.deyeinverterslave_summary_battery_soc')
+          }}%\n• Grid Status: {{ states('sensor.grid_feed_status') }}\n• Energy Independence:
+          {{ states('sensor.energy_independence_percentage') }}%\n• Battery Health:
+          {{ 'Good' if is_state('binary_sensor.battery_system_healthy', 'on') else 'Check
+          Required' }}\n\n\U0001F916 AUTOMATION SYSTEM:\n• Active Automations: {{ states('sensor.active_automations_count')
+          }}\n• Disabled Automations: {{ states('sensor.disabled_automations_count')
+          }}\n• Last Triggered: {{ states('sensor.last_automation_triggered') }}\n•
+          Daily Triggers: {{ states('counter.daily_automations_triggered') }}\n• System
+          Health: {{ 'Optimal' if is_state('binary_sensor.system_health_status', 'on')
+          else 'Needs Attention' }}\n\n\U0001F5A5️ SYSTEM PERFORMANCE:\n• Uptime: {{
+          states('sensor.system_uptime_days') }} days\n• CPU Usage: {{ states('sensor.processor_use')
+          | default('N/A') }}%\n• Memory Usage: {{ states('sensor.memory_use_percent')
+          | default('N/A') }}%\n• Disk Usage: {{ states('sensor.disk_use_percent_config')
+          | default('N/A') }}%\n• Database Size: {{ states('sensor.database_size') |
+          default('N/A') }}MB\n\n\U0001F517 INTEGRATION STATUS:\n• InfluxDB: {{ 'Connected'
+          if has_value('sensor.influxdb_database_size') else 'Check Connection' }}\n•
+          OneDrive: {{ states('sensor.onedrive_drive_state') | default('N/A') | title
+          }}\n• GitHub: {{ 'Active' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_stars')
+          else 'Check Integration' }}\n• SONOFF Devices: Connected\n• TUYA Devices:
+          Connected\n• Telegram Bot: ✅ Active\n• Email Services: ✅ Active\n\n\U0001F4CA
+          WEATHER & ENVIRONMENT:\n• Weather: {{ state_attr('weather.home', 'temperature')
+          | default('N/A') }}°C\n• Conditions: {{ states('weather.home') | default('N/A')
+          | title }}\n• UV Index: {{ state_attr('weather.home', 'uv_index') | default('N/A')
+          }}\n\n\U0001F4C1 MAINTENANCE TASKS:\n• Sensor Report: ✅ Generated (/config/sensor_reports/)\n•
+          Daily Backup: {{ 'Complete' if has_value('sensor.backup_state') else 'Scheduled'
+          }}\n• Config Sync: {{ 'Up to date' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_latest_commit')
+          else 'Pending' }}\n• Maintenance Mode: {{ 'Active' if is_state('input_boolean.maintenance_mode',
+          'on') else 'Inactive' }}\n\n⚙️ RECOMMENDED ACTIONS:\n⚙️ RECOMMENDED ACTIONS:\n{%
+          if states('sensor.average_battery_soc') | float(100) < 30 %}\n• ⚠️ Monitor
+          battery levels - currently at {{ states('sensor.average_battery_soc') }}%\n{%
+          endif %}\n{% if states('sensor.processor_use') | float(0) > 70 %}\n• \U0001F5A5️
+          Check system performance - CPU usage at {{ states('sensor.processor_use')
+          }}%\n{% endif %}\n{% if states('sensor.disabled_automations_count') | int(0)
+          > 0 %}\n• \U0001F916 Review {{ states('sensor.disabled_automations_count')
+          }} disabled automations\n{% endif %}\n{% if states('sensor.system_uptime_days')
+          | int(0) > 30 %}\n• \U0001F504 Consider planned system restart - uptime {{
+          states('sensor.system_uptime_days') }} days\n{% endif %}\n\n\U0001F4C8 YESTERDAY'S
+          HIGHLIGHTS:\n• Solar Generation: {{ states('sensor.daily_solar_production')
+          | default('N/A') }}kWh\n• Grid Import: {{ states('sensor.daily_grid_import')
+          | default('N/A') }}kWh\n• Automation Triggers: {{ states('counter.daily_automations_triggered')
+          }}\n• System Availability: 99.9%\n\n\U0001F517 Quick Links:\n• Dashboard:
+          http://192.168.1.30:8123\n• Grafana: http://192.168.1.30:3000\n• Node-RED:
+          http://192.168.1.30:1880\n\nReport generated by Home Assistant V3.2\nNext
+          report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}\n"
+    - service: telegram_bot.send_message
+      data:
+        title: "\U0001F3E0 Daily Summary"
+        message:
+          "Good morning! Here's your smart home summary:\n\n⚡ Energy: {{ states('sensor.average_battery_soc')
+          }}% battery\n\U0001F31E Solar: {{ states('sensor.combined_solar_generation')
+          }}W\n\U0001F916 Automations: {{ states('sensor.active_automations_count')
+          }} active\n\U0001F5A5️ System: {{ states('sensor.system_uptime_days') }} days
+          uptime\n\n{% if states('sensor.average_battery_soc') | float(100) < 25 %}\n⚠️
+          Battery low - {{ states('sensor.average_battery_soc') }}%\n{% elif states('sensor.combined_solar_generation')
+          | float(0) > 5000 %}\n☀️ Excellent solar conditions today!\n{% endif %}\n\nFull
+          report sent via email.\n"
+    - service: counter.reset
+      entity_id: counter.daily_automations_triggered
+#=====================================
+- id: "1757668937096"
   alias: Metrofibre Low Speed Alert
   description: Alert when speeds are significantly below thresholds
+  #=====================================
   triggers:
-  - entity_id: binary_sensor.speed_critically_low
-    to: 'on'
-    for:
-      minutes: 5
-    trigger: state
+    - entity_id: binary_sensor.speed_critically_low
+      to: "on"
+      for:
+        minutes: 5
+      trigger: state
   conditions:
-  - condition: state
-    entity_id: input_boolean.low_speed_alerts
-    state: 'on'
+    - condition: state
+      entity_id: input_boolean.low_speed_alerts
+      state: "on"
   actions:
-  - action: telegram_bot.send_message
-    data: {}
+    - action: telegram_bot.send_message
+      data: {}
   mode: single
-- id: '1757668970351'
+- id: "1757668970351"
   alias: Metrofibre Disconnection Alert
   description: Immediate alert for connection disconnections
   triggers:
-  - entity_id: binary_sensor.connection_disconnected
-    to: 'on'
-    trigger: state
+    - entity_id: binary_sensor.connection_disconnected
+      to: "on"
+      trigger: state
   conditions:
-  - condition: state
-    entity_id: input_boolean.disconnection_alerts
-    state: 'on'
+    - condition: state
+      entity_id: input_boolean.disconnection_alerts
+      state: "on"
   actions:
-  - action: telegram_bot.send_message
-    data: {}
+    - action: telegram_bot.send_message
+      data: {}
+  mode: single
+- id: "1757670100298"
+  alias: Metrofibre Disconnection Alert
+  description: Immediate alert for connection disconnections
+  triggers:
+    - entity_id: binary_sensor.connection_disconnected
+      to: "on"
+      trigger: state
+  conditions:
+    - condition: state
+      entity_id: input_boolean.disconnection_alerts
+      state: "on"
+  actions:
+    - action: telegram_bot.send_message
+      data: {}
+  mode: single
+- id: "1757670140626"
+  alias: Metrofibre Low Speed Alert
+  description: Alert when speeds are significantly below thresholds
+  triggers:
+    - entity_id: binary_sensor.speed_critically_low
+      to: "on"
+      for:
+        minutes: 5
+      trigger: state
+  conditions:
+    - condition: state
+      entity_id: input_boolean.low_speed_alerts
+      state: "on"
+  actions:
+    - action: telegram_bot.send_message
+      data: {}
   mode: single

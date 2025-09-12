@@ -24,37 +24,92 @@ tts:
 
 #-------------------------------------------------------------------------------
 # Enable the recorder for long-term statistics (works with InfluxDB)
+# Recorder Configuration - Optimized for Performance and Storage
 recorder:
-  purge_keep_days: 10
+  # Extended retention for better trend analysis (optimal for your 2x8kW setup)
+  purge_keep_days: 30
   auto_purge: true
   auto_repack: true
+  
+  # Optimized commit interval for better performance with InfluxDB
+  commit_interval: 5
+  
+  # Strategic domain inclusion - be selective
   include:
     domains:
-      - sensor
-      - binary_sensor
-      - switch
-      - light
       - climate
       - person
       - device_tracker
       - automation
       - script
-  exclude:
+      - light
+      - switch
     entities:
+      # Include only critical sensors for your energy monitoring
+      - sensor.deyeinvertermaster_summary_battery_soc
+      - sensor.deyeinverterslave_summary_battery_soc
+      - sensor.deyeinvertermaster_today_energy_bought
+      - sensor.deyeinvertermaster_today_energy_sold
+      - sensor.deyeinvertermaster_today_load_consumption
+      - sensor.deyeinverterslave_today_energy_bought
+      - sensor.deyeinverterslave_today_energy_sold
+      - sensor.deyeinverterslave_today_load_consumption
+      - sensor.deyeinvertermaster_ac_output_active_power_r_total
+      - sensor.deyeinverterslave_ac_output_active_power_r_total
+
+  # Comprehensive exclusions for high-frequency, low-value entities  
+  exclude:
+    domains:
+      - updater
+      - sun
+    entities:
+      # Time and date sensors (change constantly, no historical value)
       - sensor.date_time
       - sensor.time
+      - sensor.date_time_utc
+      - sensor.date_time_iso
+      - sensor.time_date
       - sensor.uptime
-#-------------------------------------------------------------------------------
-# History configuration
-history:
-  include:
-    domains:
-      - sensor
-      - binary_sensor
-      - switch
-      - light
-      - climate
-      - automation
+      - sensor.time_utc
+      
+      # System sensors that change frequently
+      - sensor.last_boot
+      - sensor.processor_use
+      - sensor.processor_temperature
+      - sensor.memory_use_percent
+      - sensor.swap_use_percent
+      - sensor.load_1m
+      - sensor.load_5m 
+      - sensor.load_15m
+      
+      # Network monitoring sensors (if you have them)
+      - sensor.speedtest_download
+      - sensor.speedtest_upload
+      - sensor.speedtest_ping
+      
+      # Frequent automation state changes
+      - automation.daily_sensor_report_09h00_final
+      - automation.extract_sensors_daily
+      
+    # Wildcard patterns go in entity_globs (NOT entities)
+    entity_globs:
+      # Exclude all HACS and update sensors (frequent changes, low value)
+      - sensor.*_update_available
+      - sensor.hacs_*
+      - binary_sensor.hacs_*
+      
+      # Exclude weather API sensors that update frequently
+      - sensor.openweathermap_*
+      - sensor.weather_*
+      
+      # Exclude frequent changing device trackers from unknown devices
+      - device_tracker.unknown_*
+      
+      # Exclude frequent node-red status entities
+      - sensor.node_red_*
+      
+      # Exclude telegram notification history
+      - sensor.telegram_*
 #-------------------------------------------------------------------------------
 # Logger configuration for debugging
 logger:
@@ -68,21 +123,30 @@ logger:
     homeassistant.components.script: info
 
 #-------------------------------------------------------------------------------
-# HTTP configuration for external access
+# HTTP Configuration - Secure and Optimized (Corrected)
 http:
+  # Core security settings
   use_x_forwarded_for: true
   trusted_proxies:
-    - 192.168.1.0/24  
+    - 192.168.1.0/24
     - 127.0.0.1
-# HTTP Configuration
+    - ::1
+  
+  # CORS configuration for your static IP and local access
   cors_allowed_origins:
-    - "http://localhost"
-    - "http://127.0.0.1"
-    - "http://192.168.1.30:8123"
     - "https://192.168.1.30:8123"
-  login_attempts_threshold: 10
+    - "http://192.168.1.30:8123"
+    - "http://localhost:8123"
+    - "http://127.0.0.1:8123"
+    - "https://my.home-assistant.io"  # For HA Cloud if using remote access
+  
+  # Security settings optimized for your setup
+  login_attempts_threshold: 5      # Reduced from 10 for better security
   ip_ban_enabled: true
-  use_x_frame_options: false    
+  use_x_frame_options: true        # CRITICAL: Changed to true for security
+  
+  # SSL profile for better security
+  ssl_profile: modern
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -98,8 +162,8 @@ homeassistant:
   
   # Enhanced packages configuration
   name: "Smart Home - Pierre van Ryneveld"
-  latitude: -25.7748
-  longitude: 29.4696
+  latitude: -25.84051
+  longitude: 28.24814
   elevation: 1519
   unit_system: metric
   time_zone: Africa/Johannesburg
@@ -114,21 +178,29 @@ homeassistant:
  # Shell Commands
 shell_command:
   git_commit: '/config/scripts/git_commit.sh'
-# Commented out, seem to be probematic  
-#  export_sensor_list: >
-#    bash -c "hass-cli entity list | grep ^sensor."
+  
+  # Remove problematic exports (commented out - good!)
+  # export_sensor_list: >
+  #   bash -c "hass-cli entity list | grep ^sensor."
+  
+  # Secure version using secrets
   restart_deye_integration: >
-    curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
+    curl -X POST -H "Authorization: Bearer !secret ha_long_lived_token" \
     -H "Content-Type: application/json" \
     http://localhost:8123/api/config/config_entries/reload
+    
   backup_config: >
-    cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)  
+    cp -r /config /backup/ha-config-$(date +%Y%m%d_%H%M%S)
+    
   extract_sensors: >
     python3 /config/scripts/extract_sensors.py
+    
   check_system_status: >
     echo "System check at $(date)" > /config/system_check.log
+    
+  # Secure restart command using secrets
   restart_homeassistant: >
-    curl -X POST -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZWMzOTNlMWE3Mjc0ZTRmYTJkYjY2YmI3NDBlZjNjNiIsImlhdCI6MTc1NjcxNzY4MSwiZXhwIjoyMDcyMDc3NjgxfQ.Lw958tdXTVp23-EAh-36EjpeMV_jtB9cnX0_M3mTDl8" \
+    curl -X POST -H "Authorization: Bearer !secret ha_long_lived_token" \
     -H "Content-Type: application/json" \
     http://localhost:8123/api/services/homeassistant/restart
 #-------------------------------------------------------------------------------

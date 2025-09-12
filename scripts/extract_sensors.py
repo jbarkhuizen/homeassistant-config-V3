@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Home Assistant Sensor Extraction Script
+Home Assistant Sensor Extraction Script - Security Enhanced
 Creates comprehensive sensor documentation with status and details
 """
 
@@ -9,10 +9,28 @@ import json
 import csv
 from datetime import datetime
 import os
+import yaml
 
 # Configuration
 HA_URL = "http://192.168.1.30:8123"
-HA_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkZWMzOTNlMWE3Mjc0ZTRmYTJkYjY2YmI3NDBlZjNjNiIsImlhdCI6MTc1NjcxNzY4MSwiZXhwIjoyMDcyMDc3NjgxfQ.Lw958tdXTVp23-EAh-36EjpeMV_jtB9cnX0_M3mTDl8"  # Create this in HA Profile
+
+def load_secrets():
+    """Load secrets from secrets.yaml file"""
+    secrets_path = "/config/secrets.yaml"
+    try:
+        with open(secrets_path, 'r') as file:
+            secrets = yaml.safe_load(file)
+            return secrets.get('ha_long_lived_token')
+    except Exception as e:
+        print(f"❌ Error loading secrets: {e}")
+        return None
+
+# Load token securely from secrets
+HA_TOKEN = load_secrets()
+if not HA_TOKEN:
+    print("❌ Error: Unable to load HA token from secrets.yaml")
+    exit(1)
+
 OUTPUT_DIR = "/config/sensor_reports"
 
 # Headers for API requests
@@ -24,11 +42,15 @@ headers = {
 def get_all_entities():
     """Get all entities from Home Assistant"""
     url = f"{HA_URL}/api/states"
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code}")
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"❌ API Error: {response.status_code}")
+            return []
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Connection Error: {e}")
         return []
 
 def extract_sensor_info(entity):
@@ -53,6 +75,7 @@ def extract_sensor_info(entity):
 
 def main():
     print("🔍 Starting Home Assistant Sensor Extraction...")
+    print("🔐 Loading credentials securely...")
     
     # Create output directory
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -67,56 +90,50 @@ def main():
     sensors = [entity for entity in entities if entity.get('entity_id', '').startswith('sensor.')]
     binary_sensors = [entity for entity in entities if entity.get('entity_id', '').startswith('binary_sensor.')]
     
-    print(f"📊 Found {len(sensors)} sensors and {len(binary_sensors)} binary sensors")
+    # Generate timestamp for filenames
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     
-    # Process sensors
-    sensor_data = [extract_sensor_info(sensor) for sensor in sensors]
-    binary_sensor_data = [extract_sensor_info(sensor) for sensor in binary_sensors]
-    
-    # Generate timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Process all sensor data
+    sensor_data = []
+    for sensor in sensors + binary_sensors:
+        sensor_info = extract_sensor_info(sensor)
+        sensor_data.append(sensor_info)
     
     # Export to CSV
-    csv_file = f"{OUTPUT_DIR}/sensors_report_{timestamp}.csv"
+    csv_file = os.path.join(OUTPUT_DIR, f"sensors_report_{timestamp}.csv")
     with open(csv_file, 'w', newline='', encoding='utf-8') as file:
         if sensor_data:
             writer = csv.DictWriter(file, fieldnames=sensor_data[0].keys())
             writer.writeheader()
             writer.writerows(sensor_data)
-            writer.writerows(binary_sensor_data)
+    
+    print(f"   📊 CSV Export: {csv_file}")
     
     # Export to JSON
-    json_file = f"{OUTPUT_DIR}/sensors_report_{timestamp}.json"
+    json_file = os.path.join(OUTPUT_DIR, f"sensors_report_{timestamp}.json")
     with open(json_file, 'w', encoding='utf-8') as file:
         json.dump({
-            'sensors': sensor_data,
-            'binary_sensors': binary_sensor_data,
-            'generation_time': datetime.now().isoformat(),
-            'total_sensors': len(sensor_data),
-            'total_binary_sensors': len(binary_sensor_data)
-        }, file, indent=2, ensure_ascii=False)
+            'timestamp': datetime.now().isoformat(),
+            'total_sensors': len(sensors),
+            'total_binary_sensors': len(binary_sensors),
+            'sensors': sensor_data
+        }, file, indent=2, default=str)
     
-    print(f"✅ Reports generated:")
-    print(f"   📄 CSV: {csv_file}")
-    print(f"   📄 JSON: {json_file}")
+    print(f"   📋 JSON Export: {json_file}")
     
-    # Generate summary
-    generate_summary(sensor_data, binary_sensor_data, timestamp)
-
-def generate_summary(sensors, binary_sensors, timestamp):
-    """Generate a human-readable summary report"""
-    summary_file = f"{OUTPUT_DIR}/sensors_summary_{timestamp}.md"
+    # Generate summary report
+    summary_file = os.path.join(OUTPUT_DIR, f"sensors_summary_{timestamp}.md")
     
-    # Group by domain/integration
+    # Group by integration for summary
     integrations = {}
-    for sensor in sensors + binary_sensors:
-        integration = sensor.get('Integration', 'Unknown')
+    for sensor_info in sensor_data:
+        integration = sensor_info['Integration']
         if integration not in integrations:
             integrations[integration] = []
-        integrations[integration].append(sensor)
+        integrations[integration].append(sensor_info)
     
     with open(summary_file, 'w', encoding='utf-8') as file:
-        file.write(f"# Home Assistant Sensor Report\n\n")
+        file.write(f"# Home Assistant Sensor Summary Report\n\n")
         file.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         file.write(f"**Total Sensors:** {len(sensors)}\n")
         file.write(f"**Total Binary Sensors:** {len(binary_sensors)}\n")
@@ -140,6 +157,8 @@ def generate_summary(sensors, binary_sensors, timestamp):
             file.write("\n")
     
     print(f"   📄 Summary: {summary_file}")
+    print(f"✅ Sensor extraction completed successfully!")
+    print(f"📁 Reports saved to: {OUTPUT_DIR}")
 
 if __name__ == "__main__":
     main()

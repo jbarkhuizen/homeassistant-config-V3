@@ -6,7 +6,7 @@ onedrive_diagnostic_check:
   alias: "OneDrive Diagnostic Check"
   description: "Check status of all OneDrive entities for troubleshooting"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "🔍 OneDrive Diagnostic Report"
         message: >
@@ -27,7 +27,7 @@ create_onedrive_backup:
   alias: "Create OneDrive Backup"
   description: "Create a full Home Assistant backup and sync to OneDrive"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "🔄 Backup Starting"
         message: "Creating Home Assistant backup..."
@@ -36,8 +36,8 @@ create_onedrive_backup:
         name: "HA_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
         compressed: true
     - delay:
-        minutes: 5  # Wait for backup to complete
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+        minutes: 5 # Wait for backup to complete
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "✅ Backup Complete"
         message: >
@@ -51,7 +51,7 @@ force_onedrive_sync:
   alias: "Force OneDrive Sync"
   description: "Manually trigger OneDrive synchronization"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "🔄 Force Sync Started"
         message: >
@@ -61,7 +61,7 @@ force_onedrive_sync:
     # You may need to call a specific service here
     - delay:
         minutes: 2
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "✅ Sync Process Complete"
         message: >
@@ -74,18 +74,18 @@ onedrive_health_check:
   alias: "OneDrive Health Check"
   description: "Perform comprehensive OneDrive health check"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "🔍 Health Check Running"
         message: "Performing OneDrive health check..."
     - delay:
         seconds: 10
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: notify.mobile_app_your_phone # Replace with your actual device name
       data:
         title: "📊 OneDrive Health Report"
         message: >
           HEALTH CHECK RESULTS:
-          
+
           🔗 Connection: {{ 'Good' if is_state('binary_sensor.onedrive_health', 'on') else 'Issues Detected' }}
           📊 Drive State: {{ states('sensor.onedrive_drive_state') | title }}
           💾 Storage: {{ states('sensor.onedrive_storage_percentage') }}% used
@@ -99,21 +99,20 @@ onedrive_health_check:
               title: "View Dashboard"
             - action: "FORCE_SYNC"
               title: "Force Sync"
-
 # Add these scripts to your scripts.yaml file
 
 # Immediate Telegram Test
 #test_telegram_now:
 #  alias: "Test Telegram Right Now"
 #  sequence:
-#    - service: notify.telegram
+#    - service: telegram_bot.send_message
 #      data:
 #        title: "🔧 Telegram Test"
 #        message: |
 #          Telegram test at {{ now().strftime('%H:%M:%S') }}
-#          
+#
 #          If you receive this message, your Telegram bot is working! ✅
-#          
+#
 #          System: Home Assistant (192.168.1.30:8123)
 #          Status: All systems operational
 
@@ -121,51 +120,51 @@ onedrive_health_check:
 #telegram_system_status:
 #  alias: "Telegram System Status"
 #  sequence:
-#    - service: notify.telegram
+#    - service: telegram_bot.send_message
 #      data:
 #        title: "📊 System Status"
 #        message: |
 #          🏠 Home Assistant Status Report
 #          Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-#          
+#
 #          🖥️ SERVER STATUS:
 #          • Status: {{ states('sensor.johanba_server_status') | title }}
 #          • Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
 #          • CPU Usage: {{ states('sensor.johanba_server_cpu_usage') }}%
 #          • Memory: {{ states('sensor.johanba_server_memory_usage') }}%
-#          
+#
 #          ☁️ ONEDRIVE:
 #          • Used: {{ states('sensor.onedrive_used_storage') }}GB
 #          • Free: {{ states('sensor.onedrive_remaining_storage') }}GB
 #          • Status: {{ states('sensor.onedrive_drive_state') | title }}
-#          
+#
 #          🌐 NETWORK:
 #          • WAN: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected ❌' }}
 #          • IP: {{ states('sensor.archer_d2_external_ip') }}
-#          
+#
 #          All systems monitored! 🎯
 
 # Telegram with photo (if you want to test media)
 #telegram_test_with_photo:
 #  alias: "Telegram Test with System Info"
 #  sequence:
-#    - service: notify.telegram
+#    - service: telegram_bot.send_message
 #      data:
 #        title: "📱 Advanced Telegram Test"
 #        message: |
 #          🏠 Home Assistant Advanced Test
-#          
+#
 #          This message tests formatting:
-#          
+#
 #          *Bold Text*
 #          _Italic Text_
 #          `Code Text`
-#          
+#
 #          🔹 Bullet points work
 #          🔹 Emojis work ✅
 #          🔹 Multiple lines work
-#          
+#
 #          System IP: {{ states('sensor.archer_d2_external_ip') }}
 #          Time: {{ now().strftime('%H:%M:%S') }}
-#          
-#          If you can read this formatted message, everything is perfect! 🎉              
+#
+#          If you can read this formatted message, everything is perfect! 🎉

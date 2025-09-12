@@ -1,5 +1,5 @@
 #===============================================================================
-# Advanced Automation Management Package  
+# Advanced Automation Management Package
 # File: packages/automation_management.yaml
 # Updated: 2025-09-11
 # Purpose: Automation monitoring, management and optimization
@@ -15,7 +15,7 @@ template:
           {{ states.automation | selectattr('state', 'eq', 'on') | list | count }}
         icon: mdi:robot
 
-      # Count of disabled automations  
+      # Count of disabled automations
       - name: "Disabled Automations Count"
         unique_id: disabled_automations_count
         state: >
@@ -92,27 +92,27 @@ automation:
           title: "🔧 Weekly Automation Health Report"
           message: |
             Weekly Automation Health Check - {{ now().strftime('%Y-%m-%d') }}
-            
+
             📊 AUTOMATION STATISTICS:
             • Active Automations: {{ states('sensor.active_automations_count') }}
             • Disabled Automations: {{ states('sensor.disabled_automations_count') }}
             • Last Triggered: {{ states('sensor.last_automation_triggered') }}
             • Daily Triggers This Week: {{ states('counter.daily_automations_triggered') }}
-            
+
             🖥️ SYSTEM HEALTH:
             • System Status: {{ 'Healthy' if is_state('binary_sensor.system_health_status', 'on') else 'Needs Attention' }}
             • Uptime: {{ states('sensor.system_uptime_days') }} days
             • CPU Usage: {{ states('sensor.processor_use') }}%
             • Memory Usage: {{ states('sensor.memory_use_percent') }}%
             • Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
-            
+
             🔧 MAINTENANCE STATUS:
             • Maintenance Mode: {{ 'Active' if is_state('binary_sensor.maintenance_mode_active', 'on') else 'Inactive' }}
-            
+
             📈 PERFORMANCE METRICS:
             • Database Size: {{ states('sensor.database_size') }}MB
             • Config Check: Last run {{ relative_time(states.persistent_notification | selectattr('attributes.title', 'search', 'Config') | map(attribute='attributes.created_at') | list | last) }} ago
-            
+
             Report Generated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 
   # Failed automation detection
@@ -122,7 +122,7 @@ automation:
     trigger:
       - platform: event
         event_type: automation_triggered
-      - platform: event  
+      - platform: event
         event_type: logbook_entry
     condition:
       - condition: template
@@ -132,19 +132,19 @@ automation:
     action:
       - service: counter.increment
         entity_id: counter.daily_automations_triggered
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "⚠️ Automation Failure Detected"
           message: |
             Automation failure detected:
-            
+
             🚨 Error: {{ trigger.event.data.get('message', 'Unknown error') }}
             🕒 Time: {{ now().strftime('%H:%M:%S') }}
             🔧 Entity: {{ trigger.event.data.get('entity_id', 'Unknown') }}
-            
+
             Please check the automation logs.
 
-  # System performance monitoring  
+  # System performance monitoring
   - id: system_performance_monitoring
     alias: "System Performance Monitoring"
     description: "Monitor system performance and alert on issues"
@@ -154,7 +154,7 @@ automation:
         above: 85
         for:
           minutes: 10
-      - platform: numeric_state  
+      - platform: numeric_state
         entity_id: sensor.memory_use_percent
         above: 90
         for:
@@ -168,15 +168,15 @@ automation:
           title: "⚠️ System Performance Alert"
           message: |
             System performance alert triggered:
-            
+
             🖥️ CURRENT METRICS:
             • CPU Usage: {{ states('sensor.processor_use') }}%
             • Memory Usage: {{ states('sensor.memory_use_percent') }}%  
             • Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
             • System Load: {{ states('sensor.load_15m') }}
-            
+
             🕒 Alert Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-            
+
             Consider investigating system performance.
 
 # Scripts for automation management
@@ -186,7 +186,7 @@ script:
     sequence:
       - service: homeassistant.update_entity
         target:
-          entity_id: 
+          entity_id:
             - sensor.active_automations_count
             - sensor.disabled_automations_count
             - sensor.last_automation_triggered
@@ -200,20 +200,20 @@ script:
       - service: automation.turn_off
         target:
           entity_id: automation.battery_low_warning_advanced
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "🔧 Maintenance Mode Enabled"
           message: "System maintenance mode has been activated. Some automations are temporarily disabled."
 
   disable_maintenance_mode:
-    alias: "Disable Maintenance Mode" 
+    alias: "Disable Maintenance Mode"
     sequence:
       - service: input_boolean.turn_off
         entity_id: input_boolean.maintenance_mode
       - service: automation.turn_on
         target:
           entity_id: automation.battery_low_warning_advanced
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "✅ Maintenance Mode Disabled"
           message: "System maintenance mode has been deactivated. All automations are now active."
@@ -224,7 +224,7 @@ script:
       - service: homeassistant.restart
       - delay:
           minutes: 2
-      - service: notify.telegram
+      - service: telegram_bot.send_message
         data:
           title: "🔄 Core Services Restarted"
           message: "Home Assistant core services have been restarted successfully."
