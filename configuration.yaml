@@ -9,8 +9,8 @@
 homeassistant:
   # Basic instance information
   name: "Smart Home - Pierre van Ryneveld"
-  latitude: -25.7748
-  longitude: 29.4696
+  latitude: -25.84051
+  longitude: 28.24814
   elevation: 1519
   unit_system: metric
   time_zone: Africa/Johannesburg
