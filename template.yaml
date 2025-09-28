@@ -146,3 +146,597 @@
         {% set system_ok = states('sensor.system_health_summary') == 'Good' %}
         {% set network_ok = is_state('binary_sensor.archer_d2_wan_status', 'on') %}
         {{ onedrive_ok and system_ok and network_ok }}
+
+#-------------------------------------------------------------------------------------------------------------------------------------        
+    - name: "Grid Import Hourly Δ"
+      unit_of_measurement: "kWh"
+      state: >
+       {% set cur = states('sensor.hourly_grid_import') | float(0) %}
+       {% set prev = state_attr('sensor.hourly_grid_import', 'last_period') | float(0) %}
+       {{ (cur - prev) | round(3) }}
+
+    - name: "Grid Import Daily Δ"
+      unit_of_measurement: "kWh"
+      state: >
+       {% set cur = states('sensor.daily_grid_import') | float(0) %}
+       {% set prev = state_attr('sensor.daily_grid_import', 'last_period') | float(0) %}
+       {{ (cur - prev) | round(3) }}
+
+    - name: "Grid Import Monthly Δ"
+      unit_of_measurement: "kWh"
+      state: >
+       {% set cur = states('sensor.monthly_grid_import') | float(0) %}
+       {% set prev = state_attr('sensor.monthly_grid_import', 'last_period') | float(0) %}
+       {{ (cur - prev) | round(3) }}      
+          
+#moved to budget_tracking.yaml
+#    - name: "Electricity Daily Cost"
+#      state: >
+#          {% set kwh = states('sensor.energy_daily') | float %}
+#          {% if kwh <= 100 %}
+#            {{ (kwh * 2.97) | round(2) }}
+#          {% elif kwh <= 400 %}
+#            {{ (100 * 2.97 + (kwh - 100) * 3.48) | round(2) }}
+#          {% elif kwh <= 650 %}
+#            {{ (100 * 2.97 + 300 * 3.48 + (kwh - 400) * 3.79) | round(2) }}
+#          {% else %}
+#            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (kwh - 650) * 4.09) | round(2) }}
+#          {% endif %}
+#      unit_of_measurement: "ZAR"
+#
+#    - name: "Electricity Weekly Cost"
+#      state: >
+#          {% set kwh = states('sensor.energy_weekly') | float %}
+#          {% if kwh <= 100 %}
+#            {{ (kwh * 2.97) | round(2) }}
+#          {% elif kwh <= 400 %}
+#            {{ (100 * 2.97 + (kwh - 100) * 3.48) | round(2) }}
+#          {% elif kwh <= 650 %}
+#            {{ (100 * 2.97 + 300 * 3.48 + (kwh - 400) * 3.79) | round(2) }}
+#          {% else %}
+#            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (kwh - 650) * 4.09) | round(2) }}
+#          {% endif %}
+#      unit_of_measurement: "ZAR"
+#
+#    - name: "Electricity Monthly Cost"
+#      state: >
+#          {% set kwh = states('sensor.energy_monthly') | float %}
+#          {% if kwh <= 100 %}
+#            {{ (kwh * 2.97) | round(2) }}
+#          {% elif kwh <= 400 %}
+#            {{ (100 * 2.97 + (kwh - 100) * 3.48) | round(2) }}
+#          {% elif kwh <= 650 %}
+#            {{ (100 * 2.97 + 300 * 3.48 + (kwh - 400) * 3.79) | round(2) }}
+#          {% else %}
+#            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (kwh - 650) * 4.09) | round(2) }}
+#          {% endif %}
+#      unit_of_measurement: "ZAR"
+      
+#Add to create Template Sensors to Calculate Remaining Budget       
+#    - name: "Electricity Daily Budget Remaining"
+#      unique_id: electricity_daily_budget_remaining
+#      unit_of_measurement: "ZAR"
+#      state: >
+#          {% set budget = 80 %}
+#          {% set spent = states('sensor.electricity_daily_cost') | float(0) %}
+#          {{ (budget - spent) | round(2) }}
+#
+#    - name: "Electricity Weekly Budget Remaining"
+#      unique_id: electricity_weekly_budget_remaining
+#      unit_of_measurement: "ZAR"
+#      state: >
+#          {% set budget = 500 %}
+#          {% set spent = states('sensor.electricity_weekly_cost') | float(0) %}
+#          {{ (budget - spent) | round(2) }}
+#
+#    - name: "Electricity Monthly Budget Remaining"
+#      unique_id: electricity_monthly_budget_remaining
+#      unit_of_measurement: "ZAR"
+#      state: >
+#          {% set budget = 1800 %}
+#          {% set spent = states('sensor.electricity_monthly_cost') | float(0) %}
+#          {{ (budget - spent) | round(2) }}  
+#
+#    - name: "Electricity Daily Budget Used %"
+#      unique_id: sensor.electricity_daily_budget_used
+#      unit_of_measurement: "%"
+#      state: >
+#          {% set budget = 80 %}
+#          {% set spent = states('sensor.electricity_daily_cost') | float(0) %}
+#          {{ ((spent / budget) * 100) | round(1) }}
+#
+#    - name: "Electricity Weekly Budget Used %"
+#      unique_id: electricity_weekly_budget_used
+#      unit_of_measurement: "%"
+#      state: >
+#          {% set budget = 500 %}
+#          {% set spent = states('sensor.electricity_weekly_cost') | float(0) %}
+#          {{ ((spent / budget) * 100) | round(1) }}#
+#
+#    - name: "Electricity Monthly Budget Used %"
+#      unique_id: sensor.electricity_monthly_budget_used
+#      unit_of_measurement: "%"
+#      state: >
+#          {% set budget = 1800 %}
+#          {% set spent = states('sensor.electricity_monthly_cost') | float(0) %}
+#          {{ ((spent / budget) * 100) | round(1) }}
+          
+    - name: "1pji Liang Kai Guan Daily Cost"
+      unique_id: 1pji_liang_kai_guan_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.1pji_liang_kai_guan_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Boorgat Daily Cost"
+      unique_id: boorgat_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.boorgat_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "DB Switch Pool Outbuilding Daily Cost"
+      unique_id: db_switch_pool_outbuilding_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.db_switch_pool_outbuilding_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Geyser New Daily Cost"
+      unique_id: geyser_new_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.geyser_new_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Main Eskom Switch Daily Cost"
+      unique_id: main_eskom_switch_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.main_eskom_switch_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Plugs 1 Daily Cost"
+      unique_id: plugs_1_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_1_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Plugs 2 Daily Cost"
+      unique_id: plugs_2_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_2_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Plugs 3 Daily Cost"
+      unique_id: plugs_3_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_3_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Plugs Kas Daily Cost"
+      unique_id: plugs_kas_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_kas_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Salon Daily Cost"
+      unique_id: salon_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.salon_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 10009ce3f9 Daily Cost"
+      unique_id: sonoff_10009ce3f9_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_10009ce3f9_energy_daily') | float(0)) * 2.85 }}
+          
+    - name: "Sonoff 1000cd8453 Daily Cost"
+      unique_id: sonoff_1000cd8453_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd8453_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 1000cd8649 Daily Cost"
+      unique_id: sonoff_1000cd8649_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd8649_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 1000cd8652 Daily Cost"
+      unique_id: sonoff_1000cd8652_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd8652_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 1000cd865e Daily Cost"
+      unique_id: sonoff_1000cd865e_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd865e_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 100173851d Daily Cost"
+      unique_id: sonoff_100173851d_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_100173851d_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 10023b8a40 Daily Cost"
+      unique_id: sonoff_10023b8a40_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_10023b8a40_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 10023b8a5d Daily Cost"
+      unique_id: sonoff_10023b8a5d_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_10023b8a5d_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Study Daily Cost"
+      unique_id: study_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.study_energy_daily') | float(0)) * 2.85 }}
+
+    - name: "Study Hourly Cost"
+      unique_id: study_hourly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.study_energy_hourly') | float(0)) * 2.85 }}    
+
+    - name: "Woonstel Daily Cost"
+      unique_id: woonstel_daily_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.woonstel_energy_daily') | float(0)) * 2.85 }}
+          
+    - name: "1pji Liang Kai Guan Weekly Cost"
+      unique_id: 1pji_liang_kai_guan_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.1pji_liang_kai_guan_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Boorgat Weekly Cost"
+      unique_id: boorgat_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.boorgat_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "DB Switch Pool Outbuilding Weekly Cost"
+      unique_id: db_switch_pool_outbuilding_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.db_switch_pool_outbuilding_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Geyser New Weekly Cost"
+      unique_id: geyser_new_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.geyser_new_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Main Eskom Switch Weekly Cost"
+      unique_id: main_eskom_switch_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.main_eskom_switch_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Plugs 1 Weekly Cost"
+      unique_id: plugs_1_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_1_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Plugs 2 Weekly Cost"
+      unique_id: plugs_2_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_2_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Plugs 3 Weekly Cost"
+      unique_id: plugs_3_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_3_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Plugs Kas Weekly Cost"
+      unique_id: plugs_kas_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.plugs_kas_energy_weekly') | float(0)) * 2.85 }}
+
+    - name: "Salon Weekly Cost"
+      unique_id: salon_weekly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.salon_energy_weekly') | float(0)) * 2.85 }} 
+          
+    - name: "Sonoff 1000cd8649 Monthly Cost"
+      unique_id: sonoff_1000cd8649_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd8649_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 1000cd8652 Monthly Cost"
+      unique_id: sonoff_1000cd8652_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd8652_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 1000cd865e Monthly Cost"
+      unique_id: sonoff_1000cd865e_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_1000cd865e_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 100173851d Monthly Cost"
+      unique_id: sonoff_100173851d_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_100173851d_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 10023b8a40 Monthly Cost"
+      unique_id: sonoff_10023b8a40_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_10023b8a40_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Sonoff 10023b8a5d Monthly Cost"
+      unique_id: sonoff_10023b8a5d_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.sonoff_10023b8a5d_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Study Monthly Cost"
+      unique_id: study_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.study_energy_monthly') | float(0)) * 2.85 }}
+
+    - name: "Woonstel Monthly Cost"
+      unique_id: woonstel_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+          {{ (states('sensor.woonstel_energy_monthly') | float(0)) * 2.85 }}
+          
+    - name: "Total Monthly Energy (kWh)"
+      unique_id: total_monthly_energy
+      unit_of_measurement: "kWh"
+      state_class: total
+      state: >
+        {{
+          (
+            states.sensor
+            | selectattr('entity_id', 'search', '_energy_monthly')
+            | map(attribute='state')
+            | map('float')
+            | sum
+          ) | round(2)
+        }}
+
+    - name: "Total Monthly Cost (ZAR)"
+      unique_id: total_monthly_cost
+      unit_of_measurement: "ZAR"
+      device_class: monetary
+      state: >
+        {{
+          (
+            states.sensor
+            | selectattr('entity_id', 'search', '_monthly_cost')
+            | map(attribute='state')
+            | map('float')
+            | sum
+          ) | round(2)
+        }}
+
+    - name: "Monthly Energy Email Body"
+      unique_id: monthly_energy_email_body
+      state: >
+        {% set total_kwh = states('sensor.total_monthly_energy') | float %}
+        {% set total_cost = states('sensor.total_monthly_cost') | float %}
+
+        {% set top_devices = states.sensor
+            | selectattr('entity_id', 'search', '_energy_monthly')
+            | rejectattr('state', 'in', ['unknown', 'unavailable'])
+            | sort(attribute='state', reverse=true)
+            | list
+        %}
+
+        📅 **Monthly Energy Report – {{ now().strftime('%B %Y') }}**\n
+        🔋 Total Usage: {{ total_kwh | round(2) }} kWh\n
+        💰 Total Estimated Cost: R{{ total_cost | round(2) }}\n\n
+        🔝 **Top 5 Energy Consumers:**\n
+        {% for d in top_devices[:5] %}
+          - {{ d.name }}: {{ d.state }} kWh
+        {% endfor %}
+          
+    - name: "Daily Energy Email Body"
+      unique_id: daily_energy_email_body
+      state: >
+        {% set total_kwh = states.sensor
+            | selectattr('entity_id', 'search', '_energy_daily')
+            | rejectattr('state', 'in', ['unknown', 'unavailable'])
+            | map(attribute='state') | map('float') | sum %}
+        {% set total_cost = states.sensor
+            | selectattr('entity_id', 'search', '_daily_cost')
+            | rejectattr('state', 'in', ['unknown', 'unavailable'])
+            | map(attribute='state') | map('float') | sum %}
+
+        📅 **Daily Energy Report – {{ now().strftime('%A, %d %B %Y') }}**\n
+        🔋 Total Usage: {{ total_kwh | round(2) }} kWh\n
+        💰 Estimated Cost: R{{ total_cost | round(2) }}\n\n
+        🔝 **Top 5 Consumers:**\n
+        {%- set devices = states.sensor
+          | selectattr('entity_id', 'search', '_energy_daily')
+          | rejectattr('state', 'in', ['unknown', 'unavailable'])
+          | sort(attribute='state', reverse=true) -%}
+        {% for d in devices[:5] %}
+          - {{ d.name }}: {{ d.state }} kWh
+        {% endfor %}
+          
+    - name: "Main Eskom Hourly Usage"
+      unique_id: main_eskom_hourly_usage
+      unit_of_measurement: "kWh"
+      device_class: energy
+      state_class: measurement
+      state: >
+        {% set history = state_attr('sensor.main_eskom_hourly_usage', 'last') | float(0) %}
+        {% set current = states('sensor.main_eskom_switch_energy') | float(0) %}
+        {{ (current - history) | round(3) }}
+      attributes:
+        last: "{{ states('sensor.main_eskom_switch_energy') }}"
+        
+# Sensor to List Stale Entities
+    - name: "Stale Entities Count"
+      unique_id: stale_entities_count
+      state: >
+        {{ states.sensor
+          | selectattr('state', 'in', ['unavailable', 'unknown'])
+          | list | length }}
+        
+#---------------------------------------------------------------------------------------------------------------
+# Commented out to use the section just below
+#    - name: Eskom Cost This Month
+#      unique_id: eskom_cost_month
+#      unit_of_measurement: "ZAR"
+#      state: >
+#          {% set usage = states('sensor.monthly_eskom_energy') | float(0) %}
+#          {% set solar = states('sensor.monthly_solar_offset') | float(0) %}
+#          {% set net = usage - solar %}
+#          {% if net < 0 %} {% set net = 0 %} {% endif %}
+#          {% if net <= 100 %}
+#            {{ (net * 2.97) | round(2) }}
+#          {% elif net <= 400 %}
+#            {{ (100 * 2.97 + (net - 100) * 3.48) | round(2) }}
+#          {% elif net <= 650 %}
+#            {{ (100 * 2.97 + 300 * 3.48 + (net - 400) * 3.79) | round(2) }}
+#          {% else %}
+#            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (net - 650) * 4.09) | round(2) }}
+#          {% endif %}
+          
+    - name: Eskom Cost This Month
+      unique_id: eskom_cost_this_month
+      unit_of_measurement: "ZAR"
+      state: >
+          {% set usage = states('sensor.monthly_eskom_energy') | float(0) %}
+          {% if usage <= 100 %}
+            {{ (usage * 2.97) | round(2) }}
+          {% elif usage <= 400 %}
+            {{ (100 * 2.97 + (usage - 100) * 3.48) | round(2) }}
+          {% elif usage <= 650 %}
+            {{ (100 * 2.97 + 300 * 3.48 + (usage - 400) * 3.79) | round(2) }}
+          {% else %}
+            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (usage - 650) * 4.09) | round(2) }}
+          {% endif %}      
+#---------------------------------------------------------------------------------------------------------------          
+# Template Sensor to Compare Usage vs Purchased Units
+    - name: Eskom Remaining Prepaid Credit
+      unique_id: eskom_remaining_credit
+      unit_of_measurement: "kWh"
+      state: >
+          {% set purchased = states('counter.prepaid_units_tracker') | float(0) %}
+          {% set used = states('sensor.monthly_eskom_energy') | float(0) %}
+          {{ (purchased - used) | round(2) }}
+#---------------------------------------------------------------------------------------------------------------              
+# Sensor Inventory Generator (template.yaml block)
+    - name: "Sensor Inventory Auditor"
+      unique_id: sensor_inventory_auditor
+      state: "{{ states.sensor | length }}"
+      attributes:
+        all_sensors: >
+          {{ states.sensor | map(attribute='entity_id') | list }}    
+          
+          
+    - name: "Sensor Audit Grafana Markdown"
+      unique_id: sensor_audit_grafana_markdown
+      state: >
+        {% set expected = [
+          'sensor.electricity_weekly_cost',
+          'sensor.total_monthly_energy',
+          'sensor.energy_weekly',
+          'sensor.plugs_2_weekly_cost'
+        ] %}
+        {% set actual = states.sensor | map(attribute='entity_id') | list %}
+        {% set missing = expected | reject('in', actual) | list %}
+        {% set present = expected | select('in', actual) | list %}
+
+        (
+          "**Grafana Audit Report**\n"
+          ~ "- Expected: " ~ expected | length ~ "\n"
+          ~ "- Present: " ~ present | length ~ "\n"
+          ~ "- Missing: " ~ missing | length ~ "\n\n"
+          ~ missing | map('regex_replace', '^', '❌ ') | join('\n')
+        )
+#---------------------------------------------------------------------------------
+#Binary Sensor Conversions
+    - name: "Eskom Cost This Month 2"
+      unique_id: eskom_cost_this_month_2
+      state: >
+        {{ states('sensor.electricity_monthly_cost') }}
+      unit_of_measurement: "ZAR"
+      state_class: "measurement"
+      device_class: "monetary"
+#--------------------------------------------------------------------------------
+    - name: "Garage Mid Door Battery Level"
+      unique_id: garage_mid_door_battery_level_%
+      unit_of_measurement: "%"
+      state: >
+        {% set v = states('sensor.garage_mid_door_voltage') | float(0) %}
+        {% if v >= 3.0 %}
+          100
+        {% elif v >= 2.6 %}
+          {{ ((v - 2.6) / 0.4 * 100) | round(0) }}
+        {% else %}
+          0
+        {% endif %}
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+#Binary Sensor Conversions
+- binary_sensor:
+    - name: "Is Solar Hours"
+      unique_id: is_solar_hours
+      state: >
+          {% set now = now().time() %}
+          {{ now >= strptime("08:30", "%H:%M").time() and now < strptime("16:00", "%H:%M").time() }}
+
+    - name: "Is Eskom Hours"
+      unique_id: is_eskom_hours
+      state: >
+          {% set now = now().time() %}
+          {{ now < strptime("08:30", "%H:%M").time() or now >= strptime("16:00", "%H:%M").time() }}
+              

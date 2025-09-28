@@ -28,3 +28,28 @@ input_number:
     max: 1000000.01
     mode: box
 #===============================================================================    
+# Prepaid Input Helpers
+  prepaid_units_to_add:
+    name: Units to Add
+    initial: 0
+    min: 0
+    max: 2000
+    step: 1
+    unit_of_measurement: kWh
+
+#---------------------------------------------------------------------
+  monthly_prepaid_units:
+    name: "Monthly Prepaid Units"
+    min: 0
+    max: 1000
+    step: 1
+    unit_of_measurement: kWh
+    mode: box
+    icon: mdi:flash   
+    
+#---------------------------------------------------------------------    
+
+input_button:
+  confirm_units_purchase:
+    name: Add Eskom Units
+#---------------------------------------------------------------------
