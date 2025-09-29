@@ -1,55 +1,17 @@
-# Google Drive Backup Configuration
-# Add this to your configuration.yaml file
+# packages/google_drive_config.yaml
+# FIXED - Google Drive Backup Configuration for installed integration
+# This file works when the Google Drive Backup integration is installed
 
-# Google Drive Backup Integration
-google_drive_backup:
-  # Backup schedule - daily at 09:00 as per your requirement
-  snapshot_time: "09:00"
-  
-  # Retention settings
-  days_between_snapshots: 1
-  max_snapshots_in_hassio: 7  # Keep 7 local backups
-  max_snapshots_in_google_drive: 30  # Keep 30 Google Drive backups
-  
-  # Backup settings
-  snapshot_name: "HA_Full_Backup_{year}-{month}-{day}_{hour}-{minute}"
-  
-  # Include all add-ons and folders
-  include_addons: true
-  include_folders: true
-  
-  # Specify folders to backup (your entire config)
-  backup_folder_contents:
-    - config
-    - share
-    - addons_local
-    - ssl
-    - media
-  
-  # Notification settings
-  notify_for_successful_backups: true
-  notify_for_stale_backups: true
-  
-  # Advanced settings
-  ignore_upgrade_backups: false
-  ignore_other_backups: false
-  
-  # Google Drive folder structure
-  folder_file_path: "Home Assistant Backups/Full Config Backups"
-  
-  # Generational backup scheme (keeps daily, weekly, monthly)
-  generational_backup: true
-  generational_days: 7
-  generational_weeks: 4
-  generational_months: 12
-  generational_years: 5
+# NOTE: The main google_drive_backup: configuration should NOT be in packages
+# It should be configured through the integration UI (Settings → Integrations)
+# This package file only contains sensors and automations that work WITH the integration
 
-# Additional sensors for monitoring
+# Template sensors for monitoring Google Drive Backup
 sensor:
   - platform: template
     sensors:
-      google_drive_backup_status:
-        friendly_name: "Google Drive Backup Status"
+      google_drive_backup_status_enhanced:
+        friendly_name: "Google Drive Backup Status Enhanced"
         value_template: >
           {% if states('sensor.backup_state') %}
             {{ states('sensor.backup_state') }}
@@ -65,8 +27,8 @@ sensor:
             mdi:cloud-alert
           {% endif %}
       
-      google_drive_last_backup:
-        friendly_name: "Google Drive Last Backup"
+      google_drive_last_backup_formatted:
+        friendly_name: "Google Drive Last Backup Formatted"
         value_template: >
           {% if state_attr('sensor.backup_state', 'last_backup') %}
             {{ as_timestamp(state_attr('sensor.backup_state', 'last_backup')) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}
@@ -75,8 +37,8 @@ sensor:
           {% endif %}
         icon_template: mdi:calendar-clock
       
-      google_drive_next_backup:
-        friendly_name: "Google Drive Next Backup"
+      google_drive_next_backup_formatted:
+        friendly_name: "Google Drive Next Backup Formatted"
         value_template: >
           {% if state_attr('sensor.backup_state', 'next_backup') %}
             {{ as_timestamp(state_attr('sensor.backup_state', 'next_backup')) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}
@@ -85,25 +47,26 @@ sensor:
           {% endif %}
         icon_template: mdi:calendar-plus
       
-      google_drive_backup_size:
-        friendly_name: "Google Drive Backup Size"
+      google_drive_backup_size_gb:
+        friendly_name: "Google Drive Backup Size GB"
         value_template: >
           {% if state_attr('sensor.backup_state', 'size_in_google_drive') %}
-            {{ (state_attr('sensor.backup_state', 'size_in_google_drive') / 1024 / 1024 / 1024) | round(2) }} GB
+            {{ (state_attr('sensor.backup_state', 'size_in_google_drive') / 1024 / 1024 / 1024) | round(2) }}
           {% else %}
-            Unknown
+            0
           {% endif %}
+        unit_of_measurement: "GB"
         icon_template: mdi:harddisk
 
-# Binary sensors for alerts
+# Binary sensors for backup health monitoring
 binary_sensor:
   - platform: template
     sensors:
-      google_drive_backup_health:
-        friendly_name: "Google Drive Backup Health"
+      google_drive_backup_health_status:
+        friendly_name: "Google Drive Backup Health Status"
         value_template: >
-          {% set last_backup = state_attr('sensor.backup_state', 'last_backup') %}
-          {% if last_backup %}
+          {% if state_attr('sensor.backup_state', 'last_backup') %}
+            {% set last_backup = state_attr('sensor.backup_state', 'last_backup') %}
             {% set hours_since = (as_timestamp(now()) - as_timestamp(last_backup)) / 3600 %}
             {{ hours_since < 26 }}
           {% else %}
@@ -111,17 +74,17 @@ binary_sensor:
           {% endif %}
         device_class: connectivity
         icon_template: >
-          {% if is_state('binary_sensor.google_drive_backup_health', 'on') %}
+          {% if is_state('binary_sensor.google_drive_backup_health_status', 'on') %}
             mdi:cloud-check
           {% else %}
             mdi:cloud-alert
           {% endif %}
       
-      google_drive_backup_critical:
-        friendly_name: "Google Drive Backup Critical"
+      google_drive_backup_critical_status:
+        friendly_name: "Google Drive Backup Critical Status"
         value_template: >
-          {% set last_backup = state_attr('sensor.backup_state', 'last_backup') %}
-          {% if last_backup %}
+          {% if state_attr('sensor.backup_state', 'last_backup') %}
+            {% set last_backup = state_attr('sensor.backup_state', 'last_backup') %}
             {% set hours_since = (as_timestamp(now()) - as_timestamp(last_backup)) / 3600 %}
             {{ hours_since > 48 }}
           {% else %}
@@ -129,7 +92,7 @@ binary_sensor:
           {% endif %}
         device_class: problem
         icon_template: >
-          {% if is_state('binary_sensor.google_drive_backup_critical', 'on') %}
+          {% if is_state('binary_sensor.google_drive_backup_critical_status', 'on') %}
             mdi:alert-circle
           {% else %}
             mdi:check-circle
