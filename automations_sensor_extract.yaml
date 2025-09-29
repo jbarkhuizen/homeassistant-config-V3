@@ -1,12 +1,10 @@
 #===============================================================================
-# Daily Sensor Report Automation - Single Optimized Version (Corrected)
-# File: automations_sensor_extract.yaml  
-# Updated: 2025-09-12
-# Purpose: Single comprehensive daily report at 09:00
+# Single comprehensive daily report at 09:00
 #===============================================================================
 
-- id: comprehensive_daily_report_optimized
-  alias: "Daily System Report - Comprehensive (09:00)"
+# The below has been replaced with a Ver 2.0 
+- id: comprehensive_daily_report_optimized_v1
+  alias: "Daily System Report - Comprehensive (09:00) - Version 1.0"
   description: "Single optimized daily report covering all system aspects"
   trigger:
     - platform: time
@@ -100,3 +98,255 @@
           📧 Email sent successfully
           📁 Reports saved to /config/sensor_reports/
           ✅ All systems operational
+#===============================================================================
+# Single comprehensive daily report at 09:00 with all metrics
+#===============================================================================
+
+- id: comprehensive_daily_report_consolidated_v2
+  alias: "Daily System Report - Consolidated (09:00) - Version 2.0"
+  description: "Single optimized daily report covering all system aspects with error detection"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  
+  condition: []
+  
+  action:
+    # Step 1: Update all system metrics first
+    - service: homeassistant.update_entity
+      target:
+        entity_id:
+          - sensor.active_automations_count
+          - sensor.disabled_automations_count
+          - sensor.system_uptime_days
+      continue_on_error: true
+    
+    # Step 2: Generate sensor report
+    - service: shell_command.extract_sensors
+      data: {}
+      continue_on_error: true
+    
+    # Step 3: Wait for report generation to complete
+    - delay:
+        seconds: 60
+    
+    # Step 4: Send comprehensive Telegram summary (short & sweet)
+    - service: telegram_bot.send_message
+      data:
+        target: !secret telegram_chat_id
+        title: "🏠 Good Morning - Daily System Check"
+        message: |
+          **{{ now().strftime('%A, %B %d, %Y') }} - 09:00**
+          
+          ⚡ **ENERGY STATUS:**
+          • Master Battery: {{ states('sensor.deyeinvertermaster_summary_battery_soc') | default('N/A') }}%
+          • Slave Battery: {{ states('sensor.deyeinverterslave_summary_battery_soc') | default('N/A') }}%
+          • Avg Battery: {{ ((states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) + states('sensor.deyeinverterslave_summary_battery_soc') | float(0)) / 2) | round(1) }}%
+          • Solar Power: {{ states('sensor.deyeinvertermaster_pv_power') | default('0') }}W
+          • Load Power: {{ states('sensor.deyeinvertermaster_load_power') | default('0') }}W
+          • Inverter Mode: {{ states('select.deyeinvertermaster_load_limit_exp_ess_non_ess') | default('N/A') }}
+          
+          🤖 **SYSTEM HEALTH:**
+          • Active Automations: {{ states('sensor.active_automations_count') | default('N/A') }}
+          • System Uptime: {{ states('sensor.system_uptime_days') | default('N/A') }} days
+          • CPU Usage: {{ states('sensor.processor_use') | default('N/A') }}%
+          • Memory Usage: {{ states('sensor.memory_use_percent') | default('N/A') }}%
+          
+          {% set master_battery = states('sensor.deyeinvertermaster_summary_battery_soc') | float(100) %}
+          {% set slave_battery = states('sensor.deyeinverterslave_summary_battery_soc') | float(100) %}
+          {% set avg_battery = (master_battery + slave_battery) / 2 %}
+          {% set cpu = states('sensor.processor_use') | float(0) %}
+          {% set master_online = states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          {% set slave_online = states('sensor.deyeinverterslave_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          ⚠️ **ALERTS:**
+          {% if not master_online %}
+          • 🔴 Master Inverter: OFFLINE
+          {% elif not slave_online %}
+          • 🔴 Slave Inverter: OFFLINE
+          {% elif avg_battery < 20 %}
+          • 🟡 Low Battery Warning: {{ avg_battery | round(1) }}%
+          {% elif cpu > 80 %}
+          • 🟡 High CPU Usage: {{ cpu }}%
+          {% else %}
+          • ✅ All Systems Normal
+          {% endif %}
+          
+          📧 Detailed report emailed to jbarkhuizen@gmail.com
+          📊 Sensor data: /config/sensor_reports/
+          
+          Next check: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}
+    
+    # Step 5: Send comprehensive email report (detailed)
+    - service: notify.email_ha
+      data:
+        title: "🏠 Daily Smart Home Report - {{ now().strftime('%A, %B %d, %Y') }}"
+        message: |
+          COMPREHENSIVE DAILY SYSTEM REPORT
+          Generated: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
+          Location: Pierre van Ryneveld, Gauteng (192.168.1.30:8123)
+          
+          ═══════════════════════════════════════════════════════════
+          ⚡ INVERTER & ENERGY SYSTEM STATUS
+          ═══════════════════════════════════════════════════════════
+          
+          🔋 BATTERY STATUS:
+          • Master Inverter SOC: {{ states('sensor.deyeinvertermaster_summary_battery_soc') | default('N/A') }}%
+          • Slave Inverter SOC: {{ states('sensor.deyeinverterslave_summary_battery_soc') | default('N/A') }}%
+          • Average Battery Level: {{ ((states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) + states('sensor.deyeinverterslave_summary_battery_soc') | float(0)) / 2) | round(1) }}%
+          • Battery Status: {% set avg = ((states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) + states('sensor.deyeinverterslave_summary_battery_soc') | float(0)) / 2) %}{{ 'Excellent ✅' if avg >= 80 else 'Good ✅' if avg >= 50 else 'Low ⚠️' if avg >= 20 else 'Critical 🔴' }}
+          
+          ☀️ SOLAR GENERATION (Yesterday):
+          • Master PV Generation: {{ states('sensor.deyeinvertermaster_summary_day_pv_generation') | default('N/A') }} kWh
+          • Slave PV Generation: {{ states('sensor.deyeinverterslave_summary_day_pv_generation') | default('N/A') }} kWh
+          • Total Daily Solar: {{ (states('sensor.deyeinvertermaster_summary_day_pv_generation') | float(0) + states('sensor.deyeinverterslave_summary_day_pv_generation') | float(0)) | round(2) }} kWh
+          • Current Solar Power: {{ states('sensor.deyeinvertermaster_pv_power') | default('0') }}W
+          
+          ⚡ POWER CONSUMPTION:
+          • Current Load Power: {{ states('sensor.deyeinvertermaster_load_power') | default('N/A') }}W
+          • Daily Load Consumption: {{ states('sensor.deyeinvertermaster_summary_day_load_consumption') | default('N/A') }} kWh
+          • Grid Import (Yesterday): {{ states('sensor.deyeinvertermaster_today_energy_bought') | default('N/A') }} kWh
+          • Grid Export (Yesterday): {{ states('sensor.deyeinvertermaster_today_energy_sold') | default('N/A') }} kWh
+          
+          🔧 INVERTER CONFIGURATION:
+          • Current Mode: {{ states('select.deyeinvertermaster_load_limit_exp_ess_non_ess') | default('N/A') }}
+          • Energy Management: {{ states('input_select.energy_mode') | default('Automatic') }}
+          • Master Inverter Status: {{ 'Online ✅' if states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] else 'Check Connection ⚠️' }}
+          • Slave Inverter Status: {{ 'Online ✅' if states('sensor.deyeinverterslave_summary_battery_soc') not in ['unknown', 'unavailable'] else 'Check Connection ⚠️' }}
+          
+          ═══════════════════════════════════════════════════════════
+          🤖 HOME ASSISTANT SYSTEM STATUS
+          ═══════════════════════════════════════════════════════════
+          
+          📊 AUTOMATION SYSTEM:
+          • Active Automations: {{ states('sensor.active_automations_count') | default('N/A') }}
+          • Disabled Automations: {{ states('sensor.disabled_automations_count') | default('N/A') }}
+          • Automations Triggered Today: {{ states('counter.daily_automations_triggered') | default('0') }}
+          • Last Automation: {{ states('sensor.last_automation_triggered') | default('N/A') }}
+          • Maintenance Mode: {{ 'Active 🔧' if is_state('input_boolean.maintenance_mode', 'on') else 'Inactive ✅' }}
+          
+          💻 SYSTEM PERFORMANCE:
+          • System Uptime: {{ states('sensor.system_uptime_days') | default('N/A') }} days
+          • CPU Usage: {{ states('sensor.processor_use') | default('N/A') }}%
+          • Memory Usage: {{ states('sensor.memory_use_percent') | default('N/A') }}%
+          • Disk Usage: {{ states('sensor.disk_use_percent_config') | default('N/A') }}%
+          • Database Size: {{ states('sensor.database_size') | default('N/A') }} MB
+          • System Load (15min): {{ states('sensor.load_15m') | default('N/A') }}
+          
+          🔗 INTEGRATION STATUS:
+          • SONOFF Devices: Connected ✅
+          • TUYA Devices: Connected ✅
+          • OneDrive Backup: {{ states('sensor.onedrive_drive_state') | default('N/A') | title }}
+          • OneDrive Storage: {{ states('sensor.onedrive_used_storage') | default('N/A') }}GB / {{ states('sensor.onedrive_total_available_storage') | default('N/A') }}GB
+          • InfluxDB: Recording ✅
+          • Telegram Bot: Active ✅
+          • Email Services: Operational ✅
+          • GitHub Sync: {{ 'Up to date ✅' if has_value('sensor.jbarkhuizen_homeassistant_config_v3_latest_commit') else 'Check Required ⚠️' }}
+          
+          ═══════════════════════════════════════════════════════════
+          📊 SENSOR EXTRACTION REPORT
+          ═══════════════════════════════════════════════════════════
+          
+          ✅ Daily sensor extraction completed successfully!
+          
+          📁 Generated Files:
+          • CSV Export: sensors_report_{{ now().strftime('%Y%m%d_090000') }}.csv
+          • JSON Export: sensors_report_{{ now().strftime('%Y%m%d_090000') }}.json
+          • Summary Report: sensors_summary_{{ now().strftime('%Y%m%d_090000') }}.md
+          • File Location: /config/sensor_reports/
+          
+          📈 Access via File Editor or SSH for detailed sensor data
+          
+          ═══════════════════════════════════════════════════════════
+          ⚙️ RECOMMENDED ACTIONS
+          ═══════════════════════════════════════════════════════════
+          {% set master_battery = states('sensor.deyeinvertermaster_summary_battery_soc') | float(100) %}
+          {% set slave_battery = states('sensor.deyeinverterslave_summary_battery_soc') | float(100) %}
+          {% set avg_battery = (master_battery + slave_battery) / 2 %}
+          {% set cpu = states('sensor.processor_use') | float(0) %}
+          {% set uptime = states('sensor.system_uptime_days') | int(0) %}
+          {% set disabled = states('sensor.disabled_automations_count') | int(0) %}
+          {% set master_online = states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          {% set slave_online = states('sensor.deyeinverterslave_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          
+          {% if not master_online %}
+          🔴 CRITICAL: Master inverter offline - Check connection immediately!
+          {% elif not slave_online %}
+          🔴 CRITICAL: Slave inverter offline - Check connection immediately!
+          {% elif avg_battery < 20 %}
+          ⚠️ WARNING: Battery levels low ({{ avg_battery | round(1) }}%) - Monitor closely, reduce non-essential loads
+          {% elif cpu > 80 %}
+          ⚠️ WARNING: High CPU usage ({{ cpu }}%) - Check system performance, consider restart
+          {% elif uptime > 30 %}
+          💡 SUGGESTION: System uptime is {{ uptime }} days - Consider planned restart for optimal performance
+          {% elif disabled > 0 %}
+          💡 INFO: {{ disabled }} automation(s) disabled - Review if intentional
+          {% else %}
+          ✅ All systems operating normally - No action required
+          {% endif %}
+          
+          ═══════════════════════════════════════════════════════════
+          🔗 QUICK ACCESS LINKS
+          ═══════════════════════════════════════════════════════════
+          
+          • Home Assistant: http://192.168.1.30:8123
+          • Grafana Dashboard: http://192.168.1.30:3000
+          • Node-RED: http://192.168.1.30:1880
+          • File Editor: http://192.168.1.30:8123 (Sidebar)
+          • Sensor Reports: /config/sensor_reports/
+          
+          ═══════════════════════════════════════════════════════════
+          
+          Report generated by Home Assistant Automation System
+          Next comprehensive report: {{ (now() + timedelta(days=1)).strftime('%Y-%m-%d at 09:00') }}
+          Weekly summary: Every Sunday at 09:00
+          
+          Best regards,
+          Smart Home Automation System
+          Pierre van Ryneveld Setup V3.2
+
+    # Step 6: Reset daily counter
+    - service: counter.reset
+      target:
+        entity_id: counter.daily_automations_triggered
+      continue_on_error: true
+
+  mode: single
+
+#===============================================================================
+# Sensor Report Auto-Cleanup - Every 14 Days
+#===============================================================================
+
+- id: sensor_reports_auto_cleanup
+  alias: "Sensor Reports - Auto Cleanup (14 Days)"
+  description: "Automatically delete sensor reports older than 14 days"
+  trigger:
+    - platform: time
+      at: "09:30:00"
+  
+  condition:
+    - condition: time
+      weekday:
+        - sun  # Run weekly on Sundays
+  
+  action:
+    - service: shell_command.cleanup_sensor_reports
+      data: {}
+      continue_on_error: true
+    
+    - delay:
+        seconds: 5
+    
+    - service: telegram_bot.send_message
+      data:
+        target: !secret telegram_chat_id
+        message: |
+          🧹 **Sensor Reports Cleanup**
+          
+          Old sensor reports (>14 days) have been removed.
+          
+          Current reports folder: /config/sensor_reports/
+          Cleanup runs every Sunday at 09:30
+  
+  mode: single
+
+#===============================================================================

@@ -14,7 +14,7 @@ notify:
     username: jbarkhuizen@gmail.com
     password: !secret gmail_app_password
     recipient: jbarkhuizen@gmail.com
-    sender_name: "Home Assistant General"
+    sender_name: "Home Assistant General Reports"
 #-------------------------------------------------------------------------------
   - name: email_sensors
     platform: smtp
@@ -26,7 +26,7 @@ notify:
     username: jbarkhuizen@gmail.com
     password: !secret gmail_app_password
     recipient: jbarkhuizen@gmail.com
-    sender_name: "HA Sensor Reports"
+    sender_name: "Home Assistant Sensor Reports"
 #-------------------------------------------------------------------------------
   - name: email_alerts
     platform: smtp
@@ -38,4 +38,5 @@ notify:
     username: jbarkhuizen@gmail.com
     password: !secret gmail_app_password
     recipient: jbarkhuizen@gmail.com
-    sender_name: "HA Alert System"
+    sender_name: "Home Assistant Alert System"
+#-------------------------------------------------------------------------------    

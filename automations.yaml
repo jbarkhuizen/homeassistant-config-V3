@@ -97,7 +97,7 @@
           "\U0001F3E0 Home Assistant Startup Complete - {{ now().strftime('%Y-%m-%d
           %H:%M:%S') }}"
         message:
-          "Home Assistant Startup Notification\n====================================\n\n\U0001F550
+          "Home Assistant Startup Notification via Email\n====================================\n\n\U0001F550
           RESTART DETAILS:\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S')
           }}\n• Server: 192.168.1.30:8123\n• Previous Uptime: {{ relative_time(states.sensor.last_boot.last_changed)
           if states('sensor.last_boot') != 'unavailable' else 'Unknown' }}\n\n\U0001F5A5️
@@ -157,8 +157,8 @@
       metadata: {}
       data:
         config_entry_id: 01K4W9K8EMD7CEB13ZY9093J7P
-        message: Home Assistant has Started
-        title: Home Assistant has Started
+        message: Your Home Assistant has Started
+        title: Home Assistant has Started V1
         target:
           - "6167623299"
   mode: single
@@ -178,7 +178,7 @@
         target: 6167623299
         parse_mode: markdown
         message:
-          "*\U0001F3E0 Home Assistant Startup Complete*\n\n*\U0001F550 RESTART
+          "*\U0001F3E0 Home Assistant Startup Complete via Telegram*\n\n*\U0001F550 RESTART
           DETAILS:*\n• Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}\n•
           Server: `192.168.1.30:8123`\n• Status: {{ states('sensor.johanba_server_status')
           | default('N/A') | title }}\n\n*\U0001F5A5️ SYSTEM STATUS:*\n• HA Core CPU:

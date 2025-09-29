@@ -248,6 +248,10 @@ shell_command:
   check_log_size: >
     du -sh /config/home-assistant.log 2>/dev/null | cut -f1 > /config/log_size.txt || echo "0" > /config/log_size.txt
 
+# Auto-cleanup sensor reports older than 14 days
+  cleanup_sensor_reports: >
+    find /config/sensor_reports -type f -name "sensors_*" -mtime +14 -delete &&
+    echo "Sensor reports older than 14 days deleted"
 #-------------------------------------------------------------------------------
 # HTTP Configuration - Secure and Optimized (Corrected)
 http:
