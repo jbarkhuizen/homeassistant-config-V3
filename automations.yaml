@@ -383,27 +383,27 @@
 # added on 26 Sept 2025
 # https://github.com/tomatensaus/DeyeSolarDesktop/blob/main/packages/prepaidmeter_automations.yaml
 #===============================================================================
-- id: '1717429630744'
+- id: "1717429630744"
   alias: Prepaid meter recharge
-  description: ''
+  description: ""
   trigger:
-  - platform: state
-    entity_id:
-    - input_number.prepaid_meter_units
+    - platform: state
+      entity_id:
+        - input_number.prepaid_meter_units
   condition:
-  - condition: template
-    value_template: '{{ states(''input_number.prepaid_meter_units'') | float > 0 }}'
+    - condition: template
+      value_template: "{{ states('input_number.prepaid_meter_units') | float > 0 }}"
   actions:
-  - action: input_number.set_value
-    metadata: {}
-    data:
-      value: '{{ ((states(''sensor.deyeinvertermaster_summary_total_grid_import_buy'') |
-        float(6))  * 1000.0) }}'
-    target:
-      entity_id: input_number.prepaid_meter_inverter_total_units
+    - action: input_number.set_value
+      metadata: {}
+      data:
+        value:
+          "{{ ((states('sensor.deyeinvertermaster_summary_total_grid_import_buy') |
+          float(6))  * 1000.0) }}"
+      target:
+        entity_id: input_number.prepaid_meter_inverter_total_units
   mode: single
 #================================================================================
-
 
 - id: "1680707528756"
   alias: InverterConfig Update Times
@@ -597,7 +597,7 @@
       value_template: "{{ states('sensor.johanba_server_memory_usage') | float(0) < 90 }}"
   action:
     - service: script.create_google_drive_backup
-    
+
     # Log the backup initiation
     - service: system_log.write
       data:
@@ -630,7 +630,7 @@
               entity_id: binary_sensor.google_drive_backup_health
               state: "off"
           sequence:
-            - service: notify.mobile_app_your_phone  # Replace with your actual device name
+            - service: telegram_bot.send_message # Replace with your actual device name
               data:
                 title: "⚠️ Google Drive Backup Health Alert"
                 message: >
@@ -657,15 +657,15 @@
         hours: 1
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🚨 CRITICAL: Google Drive Backup Failure"
         message: >
           CRITICAL ALERT: Google Drive backup has failed!
-          
+
           Last successful backup: {{ states('sensor.google_drive_last_backup') }}
           Current status: {{ states('sensor.google_drive_backup_status') }}
-          
+
           IMMEDIATE ACTION REQUIRED!
         data:
           tag: "gdrive_critical"
@@ -674,38 +674,38 @@
               title: "Emergency Backup"
             - action: "HEALTH_CHECK"
               title: "Health Check"
-    
+
     - service: notify.email_ha
       data:
         title: "🚨 CRITICAL ALERT: Google Drive Backup System Failure"
         message: |
           CRITICAL BACKUP SYSTEM FAILURE
-          
+
           Your Google Drive backup system has experienced a critical failure.
-          
+
           FAILURE DETAILS:
           • Last Successful Backup: {{ states('sensor.google_drive_last_backup') }}
           • Current Status: {{ states('sensor.google_drive_backup_status') }}
           • Hours Since Last Backup: >48 hours
           • Alert Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-          
+
           SYSTEM STATUS:
           • Home Assistant Version: {{ states('sensor.home_assistant_core_version') }}
           • Disk Space: {{ states('sensor.home_assistant_host_disk_free') }}GB free
           • Memory Usage: {{ states('sensor.johanba_server_memory_usage') }}%
           • System Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
-          
+
           BACKUP COMPARISON:
           • OneDrive Status: {{ states('sensor.onedrive_status_simple') }}
           • OneDrive Last Backup: Available as fallback
-          
+
           IMMEDIATE ACTIONS REQUIRED:
           1. Check Google Drive integration status
           2. Verify Google Drive connectivity
           3. Check available storage space
           4. Review Home Assistant logs
           5. Create manual backup if possible
-          
+
           This is an automated critical alert from your Home Assistant backup monitoring system.
 
 # Weekly Google Drive Health Report (Sundays at 09:00)
@@ -721,47 +721,47 @@
         - sun
   action:
     - service: script.google_drive_backup_health_check
-    
+
     - delay:
         minutes: 2
-    
+
     - service: notify.email_ha
       data:
         title: "📊 Weekly Google Drive Backup Report"
         message: |
           WEEKLY GOOGLE DRIVE BACKUP REPORT
           Report Date: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-          
+
           BACKUP PERFORMANCE:
           • Status: {{ states('sensor.google_drive_backup_status') }}
           • Health: {{ 'Excellent ✅' if is_state('binary_sensor.google_drive_backup_health', 'on') else 'Needs Attention ❌' }}
           • Last Backup: {{ states('sensor.google_drive_last_backup') }}
           • Next Scheduled: {{ states('sensor.google_drive_next_backup') }}
           • Current Size: {{ states('sensor.google_drive_backup_size') }}
-          
+
           DUAL BACKUP STATUS:
           • Google Drive: {{ states('sensor.google_drive_backup_status') }}
           • OneDrive: {{ states('sensor.onedrive_status_simple') }}
           • OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') }}%
-          
+
           SYSTEM HEALTH:
           • HA Version: {{ states('sensor.home_assistant_core_version') }}
           • OS Version: {{ states('sensor.home_assistant_operating_system_version') }}
           • Disk Free: {{ states('sensor.home_assistant_host_disk_free') }}GB
           • Memory Usage: {{ states('sensor.johanba_server_memory_usage') }}%
           • CPU Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
-          
+
           BACKUP RETENTION:
           • Local Backups: 7 days
           • Google Drive Backups: 30 days
           • Generational Backups: Enabled
-          
+
           SECURITY STATUS:
           • WAN Connection: {{ 'Connected ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected ❌' }}
           • External IP: {{ states('sensor.archer_d2_external_ip_2') }}
           • Tailscale: Active
           • AdGuard Home: Active
-          
+
           Your backup system is providing dual redundancy with both Google Drive and OneDrive.
 
 # Monthly Cleanup Automation (1st of month at 09:00)
@@ -776,21 +776,21 @@
       value_template: "{{ now().day == 1 }}"
   action:
     - service: script.cleanup_google_drive_backups
-    
+
     - delay:
         minutes: 5
-    
+
     - service: script.google_drive_backup_health_check
-    
+
     - delay:
         minutes: 2
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🧹 Monthly Google Drive Maintenance"
         message: >
           Monthly Google Drive maintenance completed!
-          
+
           • Old backups cleaned up
           • Health check performed
           • System optimized
@@ -814,13 +814,13 @@
       value_template: "{{ trigger.to_state.state != trigger.from_state.state }}"
   action:
     - service: script.emergency_google_drive_backup
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🚨 Pre-Update Backup Created"
         message: >
           Emergency backup created before {{ trigger.entity_id.split('.')[1] }} update.
-          
+
           Update available: {{ state_attr(trigger.entity_id, 'latest_version') }}
           Current version: {{ state_attr(trigger.entity_id, 'installed_version') }}
         data:
@@ -855,14 +855,14 @@
         {% endif %}
   action:
     - service: script.create_google_drive_backup
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🌐 Connectivity Restored - Backup Created"
         message: >
           Network connectivity restored. 
           Creating backup to ensure data safety.
-          
+
           Downtime detected and backup initiated.
         data:
           tag: "connectivity_backup"

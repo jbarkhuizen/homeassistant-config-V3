@@ -6,7 +6,7 @@ onedrive_diagnostic_check:
   alias: "OneDrive Diagnostic Check"
   description: "Check status of all OneDrive entities for troubleshooting"
   sequence:
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔍 OneDrive Diagnostic Report"
         message: >
@@ -27,7 +27,7 @@ create_onedrive_backup:
   alias: "Create OneDrive Backup"
   description: "Create a full Home Assistant backup and sync to OneDrive"
   sequence:
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔄 Backup Starting"
         message: "Creating Home Assistant backup..."
@@ -37,7 +37,7 @@ create_onedrive_backup:
         compressed: true
     - delay:
         minutes: 5 # Wait for backup to complete
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Backup Complete"
         message: >
@@ -51,7 +51,7 @@ force_onedrive_sync:
   alias: "Force OneDrive Sync"
   description: "Manually trigger OneDrive synchronization"
   sequence:
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔄 Force Sync Started"
         message: >
@@ -61,7 +61,7 @@ force_onedrive_sync:
     # You may need to call a specific service here
     - delay:
         minutes: 2
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Sync Process Complete"
         message: >
@@ -74,13 +74,13 @@ onedrive_health_check:
   alias: "OneDrive Health Check"
   description: "Perform comprehensive OneDrive health check"
   sequence:
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔍 Health Check Running"
         message: "Performing OneDrive health check..."
     - delay:
         seconds: 10
-    - service: notify.mobile_app_your_phone # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "📊 OneDrive Health Report"
         message: >
@@ -169,7 +169,6 @@ onedrive_health_check:
 #
 #          If you can read this formatted message, everything is perfect! 🎉
 
-
 # Google Drive Backup Scripts
 # Add these to your scripts.yaml file
 
@@ -178,25 +177,25 @@ create_google_drive_backup:
   alias: "Create Google Drive Backup"
   description: "Manually create a full backup and sync to Google Drive"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔄 Google Drive Backup Starting"
         message: "Creating full Home Assistant backup to Google Drive..."
         data:
           tag: "gdrive_backup_start"
-    
+
     # Create the backup using Google Drive Backup integration
     - service: hassio.backup_full
       data:
         name: "Manual_GDrive_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
         compressed: true
-    
+
     # Wait for backup completion
     - delay:
         minutes: 10
-    
+
     # Send completion notification
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Google Drive Backup Complete"
         message: >
@@ -205,29 +204,29 @@ create_google_drive_backup:
           Status: {{ states('sensor.google_drive_backup_status') }}
         data:
           tag: "gdrive_backup_complete"
-    
+
     # Send email notification
-    - service: notify.email_ha  # Assuming you have email notifications set up
+    - service: notify.email_ha # Assuming you have email notifications set up
       data:
         title: "✅ Google Drive Backup Completed"
         message: |
           Manual Google Drive backup has been completed successfully.
-          
+
           BACKUP DETAILS:
           • Backup Name: Manual_GDrive_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}
           • Creation Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
           • Backup Size: {{ states('sensor.google_drive_backup_size') }}
           • Status: {{ states('sensor.google_drive_backup_status') }}
           • Next Scheduled: {{ states('sensor.google_drive_next_backup') }}
-          
+
           SYSTEM STATUS:
           • Home Assistant Version: {{ states('sensor.home_assistant_core_version') }}
           • Host Disk Free: {{ states('sensor.home_assistant_host_disk_free') }}GB
           • Memory Usage: {{ states('sensor.johanba_server_memory_usage') }}%
           • CPU Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
-          
+
           Backup Location: Google Drive/Home Assistant Backups/Full Config Backups/
-          
+
           This backup includes your complete Home Assistant configuration, add-ons, and data.
 
 # Google Drive Backup Health Check
@@ -235,17 +234,17 @@ google_drive_backup_health_check:
   alias: "Google Drive Backup Health Check"
   description: "Comprehensive health check of Google Drive backup system"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔍 Google Drive Health Check"
         message: "Running comprehensive backup health check..."
-    
+
     # Gather all backup information
     - delay:
         seconds: 5
-    
+
     # Send detailed health report
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "📊 Google Drive Health Report"
         message: >
@@ -255,12 +254,12 @@ google_drive_backup_health_check:
           • Last Backup: {{ states('sensor.google_drive_last_backup') }}
           • Next Backup: {{ states('sensor.google_drive_next_backup') }}
           • Backup Size: {{ states('sensor.google_drive_backup_size') }}
-          
+
           COMPARISON WITH ONEDRIVE:
           • OneDrive Status: {{ states('sensor.onedrive_status_simple') }}
           • OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') }}%
           • OneDrive Health: {{ 'Good ✅' if is_state('binary_sensor.onedrive_health_simple', 'on') else 'Issues ❌' }}
-          
+
           SYSTEM STATUS:
           • HA Disk Free: {{ states('sensor.home_assistant_host_disk_free') }}GB
           • Memory: {{ states('sensor.johanba_server_memory_usage') }}%
@@ -273,20 +272,20 @@ force_google_drive_sync:
   alias: "Force Google Drive Sync"
   description: "Force synchronization with Google Drive"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🔄 Force Google Drive Sync"
         message: >
           Forcing Google Drive synchronization...
           Current status: {{ states('sensor.google_drive_backup_status') }}
-    
+
     # Call the Google Drive Backup service to force sync
     - service: google_drive_backup.upload
-    
+
     - delay:
         minutes: 2
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Google Drive Sync Complete"
         message: >
@@ -299,20 +298,20 @@ cleanup_google_drive_backups:
   alias: "Cleanup Old Google Drive Backups"
   description: "Clean up old backups from Google Drive and local storage"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🧹 Cleaning Up Old Backups"
         message: "Starting cleanup of old Google Drive backups..."
-    
+
     # Call cleanup service
     - service: google_drive_backup.delete_backup
       data:
         slug: "oldest"
-    
+
     - delay:
         seconds: 30
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Cleanup Complete"
         message: >
@@ -325,22 +324,22 @@ emergency_google_drive_backup:
   alias: "Emergency Google Drive Backup"
   description: "Create emergency backup before major changes"
   sequence:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "🚨 Emergency Backup Starting"
         message: "Creating emergency backup before system changes..."
         data:
           tag: "emergency_backup"
-    
+
     - service: hassio.backup_full
       data:
         name: "EMERGENCY_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
         compressed: true
-    
+
     - delay:
         minutes: 10
-    
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+
+    - service: telegram_bot.send_message # Replace with your actual device name
       data:
         title: "✅ Emergency Backup Complete"
         message: >
@@ -349,24 +348,24 @@ emergency_google_drive_backup:
           Safe to proceed with system changes.
         data:
           tag: "emergency_backup_complete"
-    
+
     - service: notify.email_ha
       data:
         title: "🚨 Emergency Backup Completed"
         message: |
           Emergency backup has been created and uploaded to Google Drive.
-          
+
           EMERGENCY BACKUP DETAILS:
           • Backup Name: EMERGENCY_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}
           • Creation Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
           • Purpose: Pre-change safety backup
           • Location: Google Drive/Home Assistant Backups/Full Config Backups/
-          
+
           SYSTEM STATE AT BACKUP:
           • HA Version: {{ states('sensor.home_assistant_core_version') }}
           • OS Version: {{ states('sensor.home_assistant_operating_system_version') }}
           • Disk Free: {{ states('sensor.home_assistant_host_disk_free') }}GB
           • Memory Usage: {{ states('sensor.johanba_server_memory_usage') }}%
-          
+
           This emergency backup captures your complete system state before any changes.
           Keep this backup until changes are verified successful.

@@ -157,39 +157,39 @@ script:
     description: "Create backup with pre and post validation"
     sequence:
       # Pre-backup validation
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "🔍 Pre-Backup Validation"
           message: "Running system validation before backup..."
-      
+
       # Check system readiness
       - condition: state
         entity_id: binary_sensor.google_drive_system_ready_for_backup
         state: "on"
-      
+
       # Log backup start
       - service: system_log.write
         data:
           message: "Google Drive backup validation started - System ready"
           level: info
-      
+
       # Create backup
       - service: hassio.backup_full
         data:
           name: "Validated_GDrive_{{ now().strftime('%Y%m%d_%H%M%S') }}"
           compressed: true
-      
+
       # Wait for completion
       - delay:
           minutes: 10
-      
+
       # Post-backup validation
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "✅ Backup Validation Complete"
           message: >
             Backup created and validated successfully!
-            
+
             Backup Details:
             • Name: Validated_GDrive_{{ now().strftime('%Y%m%d_%H%M%S') }}
             • Status: {{ states('sensor.google_drive_backup_status') }}
@@ -206,9 +206,9 @@ script:
       - service: input_boolean.turn_on
         target:
           entity_id: input_boolean.google_drive_emergency_backup_mode
-      
+
       # Immediate notifications
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "🚨 EMERGENCY BACKUP PROTOCOL ACTIVATED"
           message: >
@@ -221,52 +221,52 @@ script:
                 title: "Abort"
               - action: "CONTINUE_EMERGENCY"
                 title: "Continue"
-      
+
       # Create emergency backup
       - service: hassio.backup_full
         data:
           name: "EMERGENCY_CRITICAL_{{ now().strftime('%Y%m%d_%H%M%S') }}"
           compressed: true
-      
+
       # Send critical notifications
       - service: notify.email_ha
         data:
           title: "🚨 EMERGENCY BACKUP PROTOCOL EXECUTED"
           message: |
             EMERGENCY BACKUP PROTOCOL HAS BEEN EXECUTED
-            
+
             EMERGENCY DETAILS:
             • Protocol Activated: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
             • Backup Name: EMERGENCY_CRITICAL_{{ now().strftime('%Y%m%d_%H%M%S') }}
             • System Status: Critical backup in progress
-            
+
             SYSTEM STATE:
             • HA Version: {{ states('sensor.home_assistant_core_version') }}
             • Disk Free: {{ states('sensor.home_assistant_host_disk_free') }}GB
             • Memory: {{ states('sensor.johanba_server_memory_usage') }}%
             • Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
             • WAN Status: {{ 'Connected' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Disconnected' }}
-            
+
             This emergency backup contains your complete Home Assistant configuration
             and has been prioritized for immediate upload to Google Drive.
-            
+
             BACKUP REDUNDANCY:
             • Google Drive: Emergency backup in progress
             • OneDrive: {{ states('sensor.onedrive_status_simple') }}
-            
+
             Monitor backup completion through Home Assistant interface.
-      
+
       # Wait for completion
       - delay:
           minutes: 15
-      
+
       # Disable emergency mode
       - service: input_boolean.turn_off
         target:
           entity_id: input_boolean.google_drive_emergency_backup_mode
-      
+
       # Completion notification
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "✅ Emergency Protocol Complete"
           message: >
@@ -280,26 +280,26 @@ script:
     description: "Comprehensive monthly maintenance routine"
     sequence:
       # Start maintenance notification
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "🔧 Monthly Google Drive Maintenance"
           message: "Starting comprehensive monthly maintenance..."
-      
+
       # Health check
       - service: script.google_drive_backup_health_check
       - delay:
           minutes: 2
-      
+
       # Cleanup old backups
       - service: script.cleanup_google_drive_backups
       - delay:
           minutes: 3
-      
+
       # Validate current backup
       - service: script.google_drive_backup_with_validation
       - delay:
           minutes: 12
-      
+
       # Generate comprehensive report
       - service: notify.email_ha
         data:
@@ -307,25 +307,25 @@ script:
           message: |
             MONTHLY GOOGLE DRIVE MAINTENANCE COMPLETED
             Maintenance Date: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
-            
+
             MAINTENANCE ACTIVITIES COMPLETED:
             ✅ Health check performed
             ✅ Old backups cleaned up
             ✅ New validated backup created
             ✅ System optimization completed
-            
+
             CURRENT STATUS:
             • Backup Status: {{ states('sensor.google_drive_backup_status') }}
             • Health Score: {{ states('sensor.google_drive_backup_score') }}%
             • Last Backup: {{ states('sensor.google_drive_last_backup') }}
             • Backup Size: {{ states('sensor.google_drive_backup_size') }}
             • Storage Projection: {{ states('sensor.google_drive_storage_projection') }} days
-            
+
             DUAL BACKUP COMPARISON:
             • Google Drive Status: {{ states('sensor.google_drive_backup_status') }}
             • OneDrive Status: {{ states('sensor.onedrive_status_simple') }}
             • OneDrive Usage: {{ states('sensor.onedrive_usage_percentage') }}%
-            
+
             SYSTEM PERFORMANCE:
             • HA Version: {{ states('sensor.home_assistant_core_version') }}
             • OS Version: {{ states('sensor.home_assistant_operating_system_version') }}
@@ -333,13 +333,13 @@ script:
             • Memory Usage: {{ states('sensor.johanba_server_memory_usage') }}%
             • CPU Temperature: {{ states('sensor.johanba_server_system_temperature') }}°C
             • Backup Efficiency: {{ states('sensor.google_drive_backup_efficiency') }} GB/hr
-            
+
             SECURITY & CONNECTIVITY:
             • WAN Connection: {{ 'Stable ✅' if is_state('binary_sensor.archer_d2_wan_status', 'on') else 'Issues ❌' }}
             • External IP: {{ states('sensor.archer_d2_external_ip_2') }}
             • Tailscale VPN: Active
             • AdGuard Home: Active
-            
+
             RECOMMENDATIONS:
             {% if states('sensor.google_drive_backup_score') | int(0) < 80 %}
             ⚠️ Backup score below optimal ({{ states('sensor.google_drive_backup_score') }}%)
@@ -350,12 +350,12 @@ script:
             {% if states('sensor.johanba_server_system_temperature') | float(0) > 60 %}
             ⚠️ System temperature elevated ({{ states('sensor.johanba_server_system_temperature') }}°C)
             {% endif %}
-            
+
             Your Google Drive backup system is providing reliable protection alongside OneDrive redundancy.
             Next maintenance scheduled for {{ (now() + timedelta(days=30)).strftime('%Y-%m-%d') }}.
-      
+
       # Final notification
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "✅ Monthly Maintenance Complete"
           message: >
@@ -392,7 +392,7 @@ automation:
                   entity_id: input_select.google_drive_backup_frequency
                 data:
                   option: "Every 6 Hours"
-              - service: notify.mobile_app_your_phone  # Replace with your actual device name
+              - service: telegram_bot.send_message # Replace with your actual device name
                 data:
                   title: "🔄 Backup Frequency Increased"
                   message: "High system activity detected. Backup frequency increased to every 6 hours."
@@ -422,12 +422,12 @@ automation:
         entity_id: input_boolean.google_drive_notifications_enabled
         state: "on"
     action:
-      - service: notify.mobile_app_your_phone  # Replace with your actual device name
+      - service: telegram_bot.send_message # Replace with your actual device name
         data:
           title: "📉 Backup Score Alert"
           message: >
             Google Drive backup score has dropped to {{ states('sensor.google_drive_backup_score') }}%
-            
+
             Investigating backup system health...
           data:
             tag: "backup_score_alert"
@@ -436,7 +436,7 @@ automation:
                 title: "Run Diagnostics"
               - action: "FORCE_BACKUP"
                 title: "Force Backup"
-      
+
       # Automatically run health check
       - service: script.google_drive_backup_health_check
 

@@ -10,7 +10,7 @@
       at: "09:00:00"
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "☁️ OneDrive Daily Report"
         message: >
@@ -36,7 +36,7 @@
         minutes: 5
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "⚠️ OneDrive Storage Warning"
         message: >
@@ -64,7 +64,7 @@
         minutes: 30
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "🔴 OneDrive Connection Issue"
         message: >
@@ -94,7 +94,7 @@
     - service: script.onedrive_diagnostic_check
     - delay:
         minutes: 1
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "📊 OneDrive Weekly Report"
         message: >
@@ -121,7 +121,7 @@
     - condition: template
       value_template: "{{ now().day == 1 }}"
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "📈 OneDrive Monthly Report"
         message: >
@@ -150,7 +150,7 @@
       at: "09:00:00"
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "OneDrive Daily Report"
         message: >
@@ -176,7 +176,7 @@
         minutes: 5
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "⚠️ OneDrive Storage Warning"
         message: >
@@ -204,7 +204,7 @@
         hours: 1
   condition: []
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "🔴 OneDrive Connection Issue"
         message: >
@@ -234,7 +234,7 @@
     - service: script.onedrive_health_check
     - delay:
         minutes: 2
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "🧹 OneDrive Weekly Check"
         message: >
@@ -256,7 +256,7 @@
     - condition: template
       value_template: "{{ now().day == 1 }}"
   action:
-    - service: notify.mobile_app_your_phone  # Replace with your actual device name
+    - service: telegram_bot.send_message  # Replace with your actual device name
       data:
         title: "📊 OneDrive Monthly Report"
         message: >
