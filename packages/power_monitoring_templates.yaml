@@ -1,0 +1,206 @@
+# packages/power_monitoring_templates.yaml
+# Template sensors for power monitoring dashboard
+# All source sensors verified working
+
+template:
+  - sensor:
+      # Total Power Consumption of all sub-devices
+      - name: "Total Sub Devices Power"
+        unique_id: total_sub_devices_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ 
+            states('sensor.plugs_1_power')|float(0) +
+            states('sensor.plugs_2_power')|float(0) +
+            states('sensor.plugs_3_power')|float(0) +
+            states('sensor.plugs_kas_power_2')|float(0) +
+            states('sensor.woonstel_power')|float(0) +
+            states('sensor.geyser_new_power')|float(0) +
+            states('sensor.geyser_external_power')|float(0)
+          }}
+        availability: >
+          {{ 
+            has_value('sensor.plugs_1_power') and
+            has_value('sensor.plugs_2_power') and
+            has_value('sensor.plugs_3_power') and
+            has_value('sensor.plugs_kas_power_2') and
+            has_value('sensor.woonstel_power') and
+            has_value('sensor.geyser_new_power') and
+            has_value('sensor.geyser_external_power')
+          }}
+        attributes:
+          plugs_1: "{{ states('sensor.plugs_1_power')|float(0) }}"
+          plugs_2: "{{ states('sensor.plugs_2_power')|float(0) }}"
+          plugs_3: "{{ states('sensor.plugs_3_power')|float(0) }}"
+          plugs_kas: "{{ states('sensor.plugs_kas_power_2')|float(0) }}"
+          woonstel: "{{ states('sensor.woonstel_power')|float(0) }}"
+          geyser_new: "{{ states('sensor.geyser_new_power')|float(0) }}"
+          geyser_external: "{{ states('sensor.geyser_external_power')|float(0) }}"
+      
+      # Percentage of Main Eskom used by monitored devices
+      - name: "Monitored Devices Percentage"
+        unique_id: monitored_devices_percentage
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >
+          {% set main = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% set total = states('sensor.total_sub_devices_power')|float(0) %}
+          {% if main > 0 %}
+            {{ ((total / main) * 100)|round(1) }}
+          {% else %}
+            0
+          {% endif %}
+        availability: >
+          {{ 
+            has_value('sensor.main_eskom_switch_power') and
+            has_value('sensor.total_sub_devices_power')
+          }}
+        icon: mdi:percent-outline
+        attributes:
+          main_power: "{{ states('sensor.main_eskom_switch_power')|float(0) }}"
+          monitored_power: "{{ states('sensor.total_sub_devices_power')|float(0) }}"
+      
+      # Unmonitored Power (difference between main and sub-devices)
+      - name: "Unmonitored Power"
+        unique_id: unmonitored_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set main = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% set total = states('sensor.total_sub_devices_power')|float(0) %}
+          {% set unmonitored = main - total %}
+          {{ unmonitored|round(2) if unmonitored >= 0 else 0 }}
+        availability: >
+          {{ 
+            has_value('sensor.main_eskom_switch_power') and
+            has_value('sensor.total_sub_devices_power')
+          }}
+        icon: mdi:help-circle-outline
+        attributes:
+          calculation: "Main ({{ states('sensor.main_eskom_switch_power') }}W) - Monitored ({{ states('sensor.total_sub_devices_power') }}W)"
+      
+      # Power Status Indicator
+      - name: "Power Status"
+        unique_id: power_status_indicator
+        state: >
+          {% set power = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% if power < 1000 %}
+            Low
+          {% elif power < 3000 %}
+            Normal
+          {% elif power < 5000 %}
+            High
+          {% else %}
+            Critical
+          {% endif %}
+        icon: >
+          {% set power = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% if power < 1000 %}
+            mdi:speedometer-slow
+          {% elif power < 3000 %}
+            mdi:speedometer-medium
+          {% elif power < 5000 %}
+            mdi:speedometer
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+        availability: >
+          {{ has_value('sensor.main_eskom_switch_power') }}
+        attributes:
+          current_power: "{{ states('sensor.main_eskom_switch_power') }}W"
+          threshold_low: "0-1000W"
+          threshold_normal: "1000-3000W"
+          threshold_high: "3000-5000W"
+          threshold_critical: ">5000W"
+      
+      # Cost calculation for Main Eskom (current month)
+      - name: "Main Eskom Cost This Month"
+        unique_id: main_eskom_cost_month
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set usage = states('sensor.monthly_eskom_energy')|float(0) %}
+          {% if usage <= 100 %}
+            {{ (usage * 2.97)|round(2) }}
+          {% elif usage <= 400 %}
+            {{ (100 * 2.97 + (usage - 100) * 3.48)|round(2) }}
+          {% elif usage <= 650 %}
+            {{ (100 * 2.97 + 300 * 3.48 + (usage - 400) * 3.79)|round(2) }}
+          {% else %}
+            {{ (100 * 2.97 + 300 * 3.48 + 250 * 3.79 + (usage - 650) * 4.09)|round(2) }}
+          {% endif %}
+        availability: >
+          {{ has_value('sensor.monthly_eskom_energy') }}
+        icon: mdi:cash
+        attributes:
+          usage_kwh: "{{ states('sensor.monthly_eskom_energy') }}"
+          rate_tier_1: "2.97 ZAR/kWh (0-100 kWh)"
+          rate_tier_2: "3.48 ZAR/kWh (100-400 kWh)"
+          rate_tier_3: "3.79 ZAR/kWh (400-650 kWh)"
+          rate_tier_4: "4.09 ZAR/kWh (>650 kWh)"
+
+# packages/power_monitoring_templates.yaml
+# Eskom-focused template sensors - simplified and clean
+  - sensor:
+      # Total Power Consumption of all sub-devices
+      - name: "Total Sub Devices Power"
+        unique_id: total_sub_devices_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ 
+            states('sensor.plugs_1_power')|float(0) +
+            states('sensor.plugs_2_power')|float(0) +
+            states('sensor.plugs_3_power')|float(0) +
+            states('sensor.plugs_kas_power_2')|float(0) +
+            states('sensor.woonstel_power')|float(0) +
+            states('sensor.geyser_new_power')|float(0) +
+            states('sensor.geyser_external_power')|float(0)
+          }}
+      
+      # Percentage of Main Eskom used by monitored devices
+      - name: "Monitored Devices Percentage"
+        unique_id: monitored_devices_percentage
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >
+          {% set main = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% set total = states('sensor.total_sub_devices_power')|float(0) %}
+          {% if main > 0 %}
+            {{ ((total / main) * 100)|round(1) }}
+          {% else %}
+            0
+          {% endif %}
+      
+      # Unmonitored Power
+      - name: "Unmonitored Power"
+        unique_id: unmonitored_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set main = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% set total = states('sensor.total_sub_devices_power')|float(0) %}
+          {{ (main - total)|round(2) if (main - total) >= 0 else 0 }}
+      
+      # Power Status Indicator
+      - name: "Eskom Power Status"
+        unique_id: eskom_power_status_indicator
+        state: >
+          {% set power = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% if power < 1000 %}Low
+          {% elif power < 3000 %}Normal
+          {% elif power < 5000 %}High
+          {% else %}Critical
+          {% endif %}
+        icon: >
+          {% set power = states('sensor.main_eskom_switch_power')|float(0) %}
+          {% if power < 1000 %}mdi:speedometer-slow
+          {% elif power < 3000 %}mdi:speedometer-medium
+          {% elif power < 5000 %}mdi:speedometer
+          {% else %}mdi:alert-circle
+          {% endif %}

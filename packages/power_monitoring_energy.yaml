@@ -1,0 +1,67 @@
+# packages/power_monitoring_energy.yaml
+# Riemann Sum Integration Sensors - Convert Power (W) to Energy (kWh)
+# These sensors accumulate power consumption over time to calculate total energy used
+
+sensor:
+  # Main Eskom Switch Energy Sensor
+  - platform: integration
+    source: sensor.main_eskom_switch_power
+    name: "Main Eskom Switch Energy"
+    unique_id: main_eskom_switch_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Plugs 1 Energy Sensor  
+  - platform: integration
+    source: sensor.plugs_1_power
+    name: "Plugs 1 Energy"
+    unique_id: plugs_1_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Plugs 2 Energy Sensor
+  - platform: integration
+    source: sensor.plugs_2_power
+    name: "Plugs 2 Energy"
+    unique_id: plugs_2_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Plugs 3 Energy Sensor
+  - platform: integration
+    source: sensor.plugs_3_power
+    name: "Plugs 3 Energy"
+    unique_id: plugs_3_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Plugs Kas Energy Sensor
+  - platform: integration
+    source: sensor.plugs_kas_power_2
+    name: "Plugs Kas Energy"
+    unique_id: plugs_kas_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Geyser New Energy Sensor (if not already existing)
+  - platform: integration
+    source: sensor.geyser_new_power
+    name: "Geyser New Energy"
+    unique_id: geyser_new_energy
+    unit_prefix: k
+    round: 2
+    method: left
+  
+  # Geyser External Energy Sensor (if not already existing as sensor.geyser_ext_energy)
+  - platform: integration
+    source: sensor.geyser_external_power
+    name: "Geyser External Energy"
+    unique_id: geyser_external_energy
+    unit_prefix: k
+    round: 2
+    method: left

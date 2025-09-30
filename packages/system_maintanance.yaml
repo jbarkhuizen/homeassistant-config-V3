@@ -1,0 +1,383 @@
+#===============================================================================
+# System Maintenance & Cleanup Package
+# File: packages/system_maintenance.yaml
+# Created: 2025-09-29
+# Purpose: Automated cleanup of logs, sensor reports, and system maintenance
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# INPUT HELPERS FOR CLEANUP CONFIGURATION
+#-------------------------------------------------------------------------------
+input_number:
+  sensor_report_retention_days:
+    name: "Sensor Report Retention (Days)"
+    min: 7
+    max: 90
+    step: 1
+    initial: 14
+    unit_of_measurement: "days"
+    icon: mdi:calendar-clock
+  
+  log_retention_days:
+    name: "Log File Retention (Days)"
+    min: 3
+    max: 30
+    step: 1
+    initial: 7
+    unit_of_measurement: "days"
+    icon: mdi:file-document
+
+input_boolean:
+  auto_cleanup_enabled:
+    name: "Automatic Cleanup Enabled"
+    initial: true
+    icon: mdi:auto-fix
+  
+  cleanup_notifications:
+    name: "Cleanup Notifications"
+    initial: true
+    icon: mdi:bell
+
+#-------------------------------------------------------------------------------
+# TEMPLATE SENSORS FOR MONITORING
+#-------------------------------------------------------------------------------
+template:
+  - sensor:
+      # Count sensor report files
+      - name: "Sensor Reports Count"
+        unique_id: sensor_reports_count
+        state: >
+          {{ states('sensor.sensor_reports_disk_usage') | default('0 files') | regex_findall_index('\d+(?= files)') | int(0) }}
+        icon: mdi:file-multiple
+        attributes:
+          oldest_file: "{{ state_attr('sensor.sensor_reports_disk_usage', 'oldest_file') }}"
+          newest_file: "{{ state_attr('sensor.sensor_reports_disk_usage', 'newest_file') }}"
+      
+      # System maintenance status
+      - name: "System Maintenance Status"
+        unique_id: system_maintenance_status
+        state: >
+          {% set last_cleanup = states('input_datetime.last_cleanup_run') if has_value('input_datetime.last_cleanup_run') else 'Never' %}
+          {% set enabled = is_state('input_boolean.auto_cleanup_enabled', 'on') %}
+          {% if not enabled %}
+            Disabled
+          {% elif last_cleanup == 'Never' %}
+            Pending First Run
+          {% else %}
+            Active
+          {% endif %}
+        icon: >
+          {% if is_state('input_boolean.auto_cleanup_enabled', 'on') %}
+            mdi:check-circle
+          {% else %}
+            mdi:circle-off-outline
+          {% endif %}
+
+#-------------------------------------------------------------------------------
+# SHELL COMMANDS FOR CLEANUP OPERATIONS
+#-------------------------------------------------------------------------------
+# Note: These are already defined in configuration.yaml, keeping here for reference
+
+#-------------------------------------------------------------------------------
+# AUTOMATIONS - CLEANUP SCHEDULES
+#-------------------------------------------------------------------------------
+automation:
+  # Weekly Sensor Report Cleanup (Sundays at 09:30)
+  - id: weekly_sensor_report_cleanup
+    alias: "Cleanup: Sensor Reports (Weekly)"
+    description: "Delete sensor reports older than configured retention period"
+    trigger:
+      - platform: time
+        at: "09:30:00"
+    condition:
+      - condition: time
+        weekday:
+          - sun
+      - condition: state
+        entity_id: input_boolean.auto_cleanup_enabled
+        state: "on"
+    action:
+      # Count files before cleanup
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.sensor_reports_count
+        continue_on_error: true
+      
+      - delay:
+          seconds: 2
+      
+      - variables:
+          files_before: "{{ states('sensor.sensor_reports_count') | int(0) }}"
+      
+      # Run cleanup
+      - service: shell_command.cleanup_sensor_reports
+        data: {}
+        continue_on_error: true
+      
+      - delay:
+          seconds: 5
+      
+      # Count files after cleanup
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.sensor_reports_count
+        continue_on_error: true
+      
+      - delay:
+          seconds: 2
+      
+      - variables:
+          files_after: "{{ states('sensor.sensor_reports_count') | int(0) }}"
+          files_removed: "{{ files_before - files_after }}"
+      
+      # Send notification
+      - choose:
+        - conditions:
+            - condition: state
+              entity_id: input_boolean.cleanup_notifications
+              state: "on"
+          sequence:
+            - service: telegram_bot.send_message
+              data:
+                target: !secret telegram_chat_id
+                title: "🧹 Sensor Reports Cleanup Complete"
+                message: |
+                  **Weekly Cleanup Report**
+                  
+                  📊 Sensor Reports:
+                  • Files Removed: {{ files_removed }}
+                  • Files Remaining: {{ files_after }}
+                  • Retention Period: {{ states('input_number.sensor_report_retention_days') | int(14) }} days
+                  
+                  📁 Location: /config/sensor_reports/
+                  ⏰ Next Cleanup: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d at 09:30') }}
+                  
+                  Status: ✅ Complete
+    mode: single
+  
+  # Weekly Log File Cleanup (Sundays at 09:35)
+  - id: weekly_log_cleanup
+    alias: "Cleanup: Log Files (Weekly)"
+    description: "Clean up old log files to free disk space"
+    trigger:
+      - platform: time
+        at: "09:35:00"
+    condition:
+      - condition: time
+        weekday:
+          - sun
+      - condition: state
+        entity_id: input_boolean.auto_cleanup_enabled
+        state: "on"
+    action:
+      - service: shell_command.cleanup_logs
+        data: {}
+        continue_on_error: true
+      
+      - delay:
+          seconds: 5
+      
+      - choose:
+        - conditions:
+            - condition: state
+              entity_id: input_boolean.cleanup_notifications
+              state: "on"
+          sequence:
+            - service: telegram_bot.send_message
+              data:
+                target: !secret telegram_chat_id
+                title: "🧹 Log Files Cleanup Complete"
+                message: |
+                  **Log File Maintenance**
+                  
+                  📝 Log files older than {{ states('input_number.log_retention_days') | int(7) }} days have been removed.
+                  
+                  📊 System Performance:
+                  • Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
+                  • Database Size: {{ states('sensor.database_size') }}MB
+                  
+                  ⏰ Next Cleanup: {{ (now() + timedelta(days=7)).strftime('%Y-%m-%d at 09:35') }}
+    mode: single
+  
+  # Monthly Database Maintenance (1st of month at 03:00)
+  - id: monthly_database_maintenance
+    alias: "Maintenance: Database Optimization (Monthly)"
+    description: "Monthly database optimization and purge"
+    trigger:
+      - platform: time
+        at: "03:00:00"
+    condition:
+      - condition: template
+        value_template: "{{ now().day == 1 }}"
+      - condition: state
+        entity_id: input_boolean.auto_cleanup_enabled
+        state: "on"
+    action:
+      - service: recorder.purge
+        data:
+          keep_days: 30
+          repack: true
+      
+      - delay:
+          minutes: 5
+      
+      - choose:
+        - conditions:
+            - condition: state
+              entity_id: input_boolean.cleanup_notifications
+              state: "on"
+          sequence:
+            - service: telegram_bot.send_message
+              data:
+                target: !secret telegram_chat_id
+                title: "💾 Database Maintenance Complete"
+                message: |
+                  **Monthly Database Optimization**
+                  
+                  ✅ Database purged and repacked
+                  • Retention: 30 days
+                  • Database Size: {{ states('sensor.database_size') }}MB
+                  
+                  Completed: {{ now().strftime('%Y-%m-%d at %H:%M') }}
+                  Next Run: {{ (now() + timedelta(days=30)).strftime('%Y-%m-%d') }}
+    mode: single
+  
+  # Disk Space Warning
+  - id: disk_space_warning
+    alias: "Alert: Low Disk Space Warning"
+    description: "Alert when disk usage exceeds 85%"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.disk_use_percent_config
+        above: 85
+        for:
+          minutes: 15
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "⚠️ Low Disk Space Warning"
+          message: |
+            **Disk Space Alert**
+            
+            🔴 Disk usage is high!
+            
+            📊 Current Status:
+            • Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
+            • Disk Free: {{ states('sensor.disk_free') }}GB
+            • Database Size: {{ states('sensor.database_size') }}MB
+            
+            💡 Recommended Actions:
+            1. Run manual cleanup: Settings > System > Maintenance
+            2. Review sensor report retention
+            3. Check log file sizes
+            4. Consider database purge
+            
+            You can manually trigger cleanup from Developer Tools > Services:
+            • script.manual_cleanup_all
+      
+      - service: persistent_notification.create
+        data:
+          title: "⚠️ Low Disk Space"
+          message: >
+            Disk usage at {{ states('sensor.disk_use_percent_config') }}%.
+            Consider running maintenance cleanup.
+          notification_id: low_disk_space
+    mode: single
+
+#-------------------------------------------------------------------------------
+# SCRIPTS - MANUAL CLEANUP TRIGGERS
+#-------------------------------------------------------------------------------
+script:
+  # Manual cleanup of everything
+  manual_cleanup_all:
+    alias: "Manual Cleanup - All Systems"
+    sequence:
+      - service: persistent_notification.create
+        data:
+          title: "🧹 Cleanup Started"
+          message: "Running comprehensive system cleanup..."
+          notification_id: cleanup_progress
+      
+      # Sensor reports cleanup
+      - service: shell_command.cleanup_sensor_reports
+        data: {}
+        continue_on_error: true
+      
+      - delay:
+          seconds: 5
+      
+      # Log files cleanup
+      - service: shell_command.cleanup_logs
+        data: {}
+        continue_on_error: true
+      
+      - delay:
+          seconds: 5
+      
+      # Database purge
+      - service: recorder.purge
+        data:
+          keep_days: 30
+          repack: true
+      
+      - delay:
+          minutes: 2
+      
+      # Final notification
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "✅ Manual Cleanup Complete"
+          message: |
+            **System Cleanup Completed**
+            
+            ✅ All cleanup operations finished:
+            • Sensor reports cleaned
+            • Log files removed
+            • Database optimized
+            
+            📊 Current Status:
+            • Disk Usage: {{ states('sensor.disk_use_percent_config') }}%
+            • Database Size: {{ states('sensor.database_size') }}MB
+            • Free Space: {{ states('sensor.disk_free') }}GB
+            
+            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+      
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: cleanup_progress
+  
+  # Cleanup sensor reports only
+  manual_cleanup_sensor_reports:
+    alias: "Manual Cleanup - Sensor Reports Only"
+    sequence:
+      - service: shell_command.cleanup_sensor_reports
+        data: {}
+      
+      - delay:
+          seconds: 5
+      
+      - service: persistent_notification.create
+        data:
+          title: "✅ Sensor Reports Cleaned"
+          message: "Old sensor reports have been removed."
+          notification_id: cleanup_sensors
+  
+  # Cleanup logs only
+  manual_cleanup_logs:
+    alias: "Manual Cleanup - Logs Only"
+    sequence:
+      - service: shell_command.cleanup_logs
+        data: {}
+      
+      - delay:
+          seconds: 5
+      
+      - service: persistent_notification.create
+        data:
+          title: "✅ Logs Cleaned"
+          message: "Old log files have been removed."
+          notification_id: cleanup_logs
+
+#===============================================================================

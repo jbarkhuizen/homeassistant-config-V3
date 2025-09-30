@@ -21,7 +21,7 @@
           🕐 RESTART DETAILS:
           • Startup Time: {{ now().strftime('%Y-%m-%d at %H:%M:%S') }}
           • Server: 192.168.1.30:8123
-          • Previous Uptime: {{ relative_time(states('sensor.last_boot') | as_datetime) if states('sensor.last_boot') not in ['unavailable', 'unknown', 'none'] else 'Unknown' }}
+          • Previous Uptime: {% if states('sensor.last_boot') not in ['unavailable', 'unknown'] and has_value('sensor.last_boot') %}{{ relative_time(states.sensor.last_boot.last_changed) }}{% else %}Unknown{% endif %}
           
           🖥️ SYSTEM STATUS:
           • Home Assistant Core: {{ states('sensor.home_assistant_core_cpu_percent') | default('N/A') }}% CPU

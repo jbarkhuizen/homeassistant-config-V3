@@ -144,12 +144,13 @@ template:
         icon: mdi:lightbulb-on
         
       # Weather-based solar forecast
+      # Weather-based solar forecast
       - name: "Solar Generation Forecast"
         unique_id: solar_generation_forecast
         unit_of_measurement: "kWh"
         state: >
           {% set cloud_cover = states('sensor.openweathermap_cloud_coverage') | float(50) %}
-          {% set max_generation = 60 %}  # Adjust based on your 2x8kW system
+          {% set max_generation = 60 %}
           {% set efficiency = (100 - cloud_cover) / 100 %}
           {{ (max_generation * efficiency) | round(1) }}
         icon: mdi:weather-sunny

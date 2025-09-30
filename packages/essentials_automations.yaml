@@ -1,7 +1,4 @@
 #===============================================================================
-# Enhanced Inverter Management Package
-# File: packages/inverter_management.yaml
-# Updated: 2025-09-26
 # Purpose: Comprehensive energy management for 2x 8kW Sunsunk inverters
 # Includes your existing automation plus enhanced 09:00 daily management
 #===============================================================================
@@ -225,6 +222,62 @@ automation:
             Check InfluxDB/Grafana dashboards for detailed analytics.
           notification_id: weekly_inverter_report
 
+#===============================================================================
+#-------------------------------------------------------------------------------
+# INTEGRATION WITH ERROR DETECTION SYSTEM
+#-------------------------------------------------------------------------------
+# Note: Main error detection is in packages/inverter_error_detection.yaml
+# This section integrates with the existing essentials automation
+
+  # Update the existing daily health check to use new error detection
+  - id: inverter_daily_health_check_enhanced
+    alias: 'Inverter: Daily Health Check Enhanced (09:05)'
+    description: 'Enhanced daily health check using error detection system'
+    trigger:
+      - platform: time
+        at: "09:05:00"  # Run 5 minutes after main report
+    condition: []
+    action:
+      - service: homeassistant.update_entity
+        target:
+          entity_id:
+            - sensor.battery_health_score
+            - sensor.inverter_error_summary
+            - sensor.average_battery_soc
+        continue_on_error: true
+      
+      - delay:
+          seconds: 5
+      
+      # Send summary if any issues detected
+      - choose:
+        - conditions:
+            - condition: numeric_state
+              entity_id: sensor.battery_health_score
+              below: 60
+          sequence:
+            - service: telegram_bot.send_message
+              data:
+                target: !secret telegram_chat_id
+                title: "⚠️ Battery Health Check"
+                message: |
+                  **Daily Battery Health Report**
+                  
+                  Battery Health Score: {{ states('sensor.battery_health_score') }}/100
+                  Rating: {{ state_attr('sensor.battery_health_score', 'rating') }}
+                  
+                  Current Errors: {{ states('sensor.inverter_error_summary') }}
+                  
+                  Please review inverter system status.
+        default:
+          - service: system_log.write
+            data:
+              message: "Daily inverter health check completed - All systems healthy (Score: {{ states('sensor.battery_health_score') }})"
+              level: info
+    mode: single
+
+#===============================================================================6504
+
 # Supporting sensors for enhanced monitoring
 template:
   - sensor:
@@ -287,22 +340,3 @@ template:
           {% endif %}
         icon: mdi:power-settings
 
-# Binary sensors for system health monitoring
-binary_sensor:
-  - platform: template
-    sensors:
-      inverter_system_healthy:
-        friendly_name: "Inverter System Healthy"
-        device_class: connectivity
-        value_template: >
-          {% set battery_ok = states('sensor.deyeinvertermaster_battery_soc') | int(0) > 15 %}
-          {% set mode_ok = states('select.deyeinvertermaster_load_limit_exp_ess_non_ess') in ['Essentials', 'Zero Export'] %}
-          {{ battery_ok and mode_ok }}
-        icon_template: >
-          {% if is_state('binary_sensor.inverter_system_healthy', 'on') %}
-            mdi:check-circle-outline
-          {% else %}
-            mdi:alert-circle-outline
-          {% endif %}
-
-#===============================================================================

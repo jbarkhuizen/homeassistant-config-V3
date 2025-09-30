@@ -190,7 +190,7 @@ template:
           {{ db_size > 500 or db_health in ['Poor', 'Critical'] }}
 
       # System performance alert
-      - name: "System Performance Alert"
+      - name: "System Performance Alert (systems_monitoring.yaml)"
         unique_id: system_performance_alert
         device_class: problem
         state: >

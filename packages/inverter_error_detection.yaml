@@ -1,0 +1,552 @@
+#===============================================================================
+# Inverter Error Detection & Advanced Monitoring Package
+# File: packages/inverter_error_detection.yaml
+# Created: 2025-09-29
+# Purpose: Comprehensive error detection for 2x 8kW Sunsunk/Deye inverters
+# Features: Communication monitoring, voltage alerts, temperature tracking,
+#           battery health scoring, predictive maintenance
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# BINARY SENSORS - Error Detection
+#-------------------------------------------------------------------------------
+binary_sensor:
+  - platform: template
+    sensors:
+      # Master Inverter Communication Status
+      inverter_master_online:
+        friendly_name: "Master Inverter Online"
+        device_class: connectivity
+        value_template: >
+          {{ states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable', 'none'] }}
+        icon_template: >
+          {% if is_state('binary_sensor.inverter_master_online', 'on') %}
+            mdi:check-network
+          {% else %}
+            mdi:close-network
+          {% endif %}
+        attribute_templates:
+          last_seen: >
+            {{ state_attr('sensor.deyeinvertermaster_summary_battery_soc', 'last_updated') }}
+      
+      # Slave Inverter Communication Status
+      inverter_slave_online:
+        friendly_name: "Slave Inverter Online"
+        device_class: connectivity
+        value_template: >
+          {{ states('sensor.deyeinverterslave_summary_battery_soc') not in ['unknown', 'unavailable', 'none'] }}
+        icon_template: >
+          {% if is_state('binary_sensor.inverter_slave_online', 'on') %}
+            mdi:check-network
+          {% else %}
+            mdi:close-network
+          {% endif %}
+        attribute_templates:
+          last_seen: >
+            {{ state_attr('sensor.deyeinverterslave_summary_battery_soc', 'last_updated') }}
+      
+      # Master Battery Critical Low
+      battery_master_critical:
+        friendly_name: "Master Battery Critical"
+        device_class: problem
+        value_template: >
+          {{ states('sensor.deyeinvertermaster_summary_battery_soc') | float(100) < 15 }}
+        icon_template: >
+          {% if is_state('binary_sensor.battery_master_critical', 'on') %}
+            mdi:battery-alert
+          {% else %}
+            mdi:battery-check
+          {% endif %}
+      
+      # Slave Battery Critical Low
+      battery_slave_critical:
+        friendly_name: "Slave Battery Critical"
+        device_class: problem
+        value_template: >
+          {{ states('sensor.deyeinverterslave_summary_battery_soc') | float(100) < 15 }}
+        icon_template: >
+          {% if is_state('binary_sensor.battery_slave_critical', 'on') %}
+            mdi:battery-alert
+          {% else %}
+            mdi:battery-check
+          {% endif %}
+      
+      # Battery Voltage Issue Detection
+      battery_voltage_issue:
+        friendly_name: "Battery Voltage Issue"
+        device_class: problem
+        value_template: >
+          {% set master_voltage = states('sensor.deyeinvertermaster_battery_voltage') | float(48) %}
+          {% set slave_voltage = states('sensor.deyeinverterslave_battery_voltage') | float(48) %}
+          {{ master_voltage < 44 or master_voltage > 58 or slave_voltage < 44 or slave_voltage > 58 }}
+        icon_template: >
+          {% if is_state('binary_sensor.battery_voltage_issue', 'on') %}
+            mdi:flash-alert
+          {% else %}
+            mdi:flash
+          {% endif %}
+      
+      # Solar Generation Issue (no generation during daylight)
+      solar_generation_issue:
+        friendly_name: "Solar Generation Issue"
+        device_class: problem
+        value_template: >
+          {% set hour = now().hour %}
+          {% set solar_power = states('sensor.deyeinvertermaster_pv_power') | float(0) %}
+          {% set is_daytime = hour >= 8 and hour <= 16 %}
+          {{ is_daytime and solar_power < 100 }}
+        icon_template: >
+          {% if is_state('binary_sensor.solar_generation_issue', 'on') %}
+            mdi:solar-panel-large
+          {% else %}
+            mdi:solar-power
+          {% endif %}
+      
+      # Grid Connection Issue
+      grid_connection_issue:
+        friendly_name: "Grid Connection Issue"
+        device_class: problem
+        value_template: >
+          {% set grid_voltage = states('sensor.deyeinvertermaster_grid_voltage') | float(230) %}
+          {{ grid_voltage < 200 or grid_voltage > 253 }}
+        icon_template: >
+          {% if is_state('binary_sensor.grid_connection_issue', 'on') %}
+            mdi:transmission-tower-off
+          {% else %}
+            mdi:transmission-tower
+          {% endif %}
+      
+      # Inverter System Health (Overall)
+      inverter_system_health:
+        friendly_name: "Inverter System Health"
+        device_class: safety
+        value_template: >
+          {% set master_online = is_state('binary_sensor.inverter_master_online', 'on') %}
+          {% set slave_online = is_state('binary_sensor.inverter_slave_online', 'on') %}
+          {% set battery_ok = not is_state('binary_sensor.battery_master_critical', 'on') and not is_state('binary_sensor.battery_slave_critical', 'on') %}
+          {% set voltage_ok = not is_state('binary_sensor.battery_voltage_issue', 'on') %}
+          {% set grid_ok = not is_state('binary_sensor.grid_connection_issue', 'on') %}
+          {{ master_online and slave_online and battery_ok and voltage_ok and grid_ok }}
+        icon_template: >
+          {% if is_state('binary_sensor.inverter_system_health', 'on') %}
+            mdi:shield-check
+          {% else %}
+            mdi:shield-alert
+          {% endif %}
+
+#-------------------------------------------------------------------------------
+# TEMPLATE SENSORS - Performance & Health Metrics
+#-------------------------------------------------------------------------------
+template:
+  - sensor:
+      # Average Battery SOC
+      - name: "Average Battery SOC"
+        unique_id: average_battery_soc
+        unit_of_measurement: "%"
+        state_class: measurement
+        device_class: battery
+        state: >
+          {% set master = states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) %}
+          {% set slave = states('sensor.deyeinverterslave_summary_battery_soc') | float(0) %}
+          {{ ((master + slave) / 2) | round(1) }}
+        icon: mdi:battery-50
+        attributes:
+          master_soc: "{{ states('sensor.deyeinvertermaster_summary_battery_soc') }}%"
+          slave_soc: "{{ states('sensor.deyeinverterslave_summary_battery_soc') }}%"
+          status: >
+            {% set avg = ((states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) + states('sensor.deyeinverterslave_summary_battery_soc') | float(0)) / 2) %}
+            {{ 'Excellent' if avg >= 80 else 'Good' if avg >= 50 else 'Low' if avg >= 20 else 'Critical' }}
+      
+      # Combined Solar Generation
+      - name: "Combined Solar Power"
+        unique_id: combined_solar_power
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        state: >
+          {% set master = states('sensor.deyeinvertermaster_pv_power') | float(0) %}
+          {% set slave = states('sensor.deyeinverterslave_pv_power') | float(0) %}
+          {{ (master + slave) | round(0) }}
+        icon: mdi:solar-power
+        attributes:
+          master_power: "{{ states('sensor.deyeinvertermaster_pv_power') }}W"
+          slave_power: "{{ states('sensor.deyeinverterslave_pv_power') }}W"
+      
+      # Combined Daily Solar Generation
+      - name: "Combined Daily Solar Generation"
+        unique_id: combined_daily_solar_generation
+        unit_of_measurement: "kWh"
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {% set master = states('sensor.deyeinvertermaster_summary_day_pv_generation') | float(0) %}
+          {% set slave = states('sensor.deyeinverterslave_summary_day_pv_generation') | float(0) %}
+          {{ (master + slave) | round(2) }}
+        icon: mdi:solar-power-variant
+      
+      # Battery Health Score (0-100)
+      - name: "Battery Health Score"
+        unique_id: battery_health_score
+        unit_of_measurement: "score"
+        state: >
+          {% set master_soc = states('sensor.deyeinvertermaster_summary_battery_soc') | float(0) %}
+          {% set slave_soc = states('sensor.deyeinverterslave_summary_battery_soc') | float(0) %}
+          {% set avg_soc = (master_soc + slave_soc) / 2 %}
+          {% set master_online = states('sensor.deyeinvertermaster_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          {% set slave_online = states('sensor.deyeinverterslave_summary_battery_soc') not in ['unknown', 'unavailable'] %}
+          
+          {% set score = 0 %}
+          {% if master_online and slave_online %}
+            {% set score = score + 40 %}
+          {% elif master_online or slave_online %}
+            {% set score = score + 20 %}
+          {% endif %}
+          
+          {% if avg_soc >= 80 %}
+            {% set score = score + 40 %}
+          {% elif avg_soc >= 50 %}
+            {% set score = score + 30 %}
+          {% elif avg_soc >= 20 %}
+            {% set score = score + 20 %}
+          {% endif %}
+          
+          {% set voltage_ok = not is_state('binary_sensor.battery_voltage_issue', 'on') %}
+          {% if voltage_ok %}
+            {% set score = score + 20 %}
+          {% endif %}
+          
+          {{ score | round(0) }}
+        icon: >
+          {% set score = states('sensor.battery_health_score') | int(0) %}
+          {% if score >= 80 %}
+            mdi:heart-pulse
+          {% elif score >= 60 %}
+            mdi:heart
+          {% elif score >= 40 %}
+            mdi:heart-half
+          {% else %}
+            mdi:heart-broken
+          {% endif %}
+        attributes:
+          rating: >
+            {% set score = states('sensor.battery_health_score') | int(0) %}
+            {{ 'Excellent' if score >= 80 else 'Good' if score >= 60 else 'Fair' if score >= 40 else 'Poor' }}
+          master_online: "{{ is_state('binary_sensor.inverter_master_online', 'on') }}"
+          slave_online: "{{ is_state('binary_sensor.inverter_slave_online', 'on') }}"
+          voltage_status: "{{ 'Normal' if not is_state('binary_sensor.battery_voltage_issue', 'on') else 'Issue Detected' }}"
+      
+      # Inverter Error Summary
+      - name: "Inverter Error Summary"
+        unique_id: inverter_error_summary
+        state: >
+          {% set errors = [] %}
+          {% if not is_state('binary_sensor.inverter_master_online', 'on') %}
+            {% set errors = errors + ['Master Offline'] %}
+          {% endif %}
+          {% if not is_state('binary_sensor.inverter_slave_online', 'on') %}
+            {% set errors = errors + ['Slave Offline'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.battery_master_critical', 'on') %}
+            {% set errors = errors + ['Master Battery Critical'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.battery_slave_critical', 'on') %}
+            {% set errors = errors + ['Slave Battery Critical'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.battery_voltage_issue', 'on') %}
+            {% set errors = errors + ['Voltage Issue'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.solar_generation_issue', 'on') %}
+            {% set errors = errors + ['Solar Issue'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.grid_connection_issue', 'on') %}
+            {% set errors = errors + ['Grid Issue'] %}
+          {% endif %}
+          {{ 'No Errors' if errors | length == 0 else errors | join(', ') }}
+        icon: >
+          {% set errors = states('sensor.inverter_error_summary') %}
+          {% if errors == 'No Errors' %}
+            mdi:check-circle
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+        attributes:
+          error_count: >
+            {% set count = 0 %}
+            {% if not is_state('binary_sensor.inverter_master_online', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if not is_state('binary_sensor.inverter_slave_online', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if is_state('binary_sensor.battery_master_critical', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if is_state('binary_sensor.battery_slave_critical', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if is_state('binary_sensor.battery_voltage_issue', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if is_state('binary_sensor.solar_generation_issue', 'on') %}{% set count = count + 1 %}{% endif %}
+            {% if is_state('binary_sensor.grid_connection_issue', 'on') %}{% set count = count + 1 %}{% endif %}
+            {{ count }}
+          severity: >
+            {% set count = states.sensor.inverter_error_summary.attributes.error_count | int(0) %}
+            {{ 'Critical' if count >= 3 else 'Warning' if count >= 1 else 'Normal' }}
+
+#-------------------------------------------------------------------------------
+# AUTOMATIONS - Immediate Error Notifications
+#-------------------------------------------------------------------------------
+automation:
+  # Master Inverter Offline Alert
+  - id: inverter_master_offline_alert
+    alias: "Inverter: Master Offline Alert"
+    description: "Immediate notification when master inverter goes offline"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.inverter_master_online
+        to: 'off'
+        for:
+          minutes: 2  # Wait 2 minutes to avoid false alarms
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "🔴 CRITICAL: Master Inverter Offline"
+          message: |
+            **CRITICAL ALERT**
+            
+            ⚠️ Master inverter has lost communication!
+            
+            **Details:**
+            • Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            • Last SOC: {{ states('sensor.deyeinvertermaster_summary_battery_soc') }}%
+            • Slave Status: {{ 'Online' if is_state('binary_sensor.inverter_slave_online', 'on') else 'Offline' }}
+            
+            **Recommended Actions:**
+            1. Check inverter display panel
+            2. Verify network connection
+            3. Check circuit breakers
+            4. Restart inverter if necessary
+            
+            System will continue monitoring.
+      
+      - service: notify.email_alerts
+        data:
+          title: "🔴 CRITICAL: Master Inverter Offline"
+          message: |
+            CRITICAL INVERTER ALERT
+            
+            Master inverter communication lost at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            
+            Immediate attention required.
+            Check inverter status and network connectivity.
+    mode: single
+  
+  # Slave Inverter Offline Alert
+  - id: inverter_slave_offline_alert
+    alias: "Inverter: Slave Offline Alert"
+    description: "Immediate notification when slave inverter goes offline"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.inverter_slave_online
+        to: 'off'
+        for:
+          minutes: 2
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "🔴 CRITICAL: Slave Inverter Offline"
+          message: |
+            **CRITICAL ALERT**
+            
+            ⚠️ Slave inverter has lost communication!
+            
+            **Details:**
+            • Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            • Last SOC: {{ states('sensor.deyeinverterslave_summary_battery_soc') }}%
+            • Master Status: {{ 'Online' if is_state('binary_sensor.inverter_master_online', 'on') else 'Offline' }}
+            
+            **Recommended Actions:**
+            1. Check inverter display panel
+            2. Verify network connection
+            3. Check circuit breakers
+            4. Restart inverter if necessary
+            
+            System will continue monitoring.
+      
+      - service: notify.email_alerts
+        data:
+          title: "🔴 CRITICAL: Slave Inverter Offline"
+          message: |
+            CRITICAL INVERTER ALERT
+            
+            Slave inverter communication lost at {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+            
+            Immediate attention required.
+    mode: single
+  
+  # Battery Critical Level Alert
+  - id: battery_critical_level_alert
+    alias: "Inverter: Battery Critical Level Alert"
+    description: "Alert when any battery drops below 15%"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.battery_master_critical
+        to: 'on'
+      - platform: state
+        entity_id: binary_sensor.battery_slave_critical
+        to: 'on'
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "🔴 CRITICAL: Battery Level Critical"
+          message: |
+            **BATTERY CRITICAL ALERT**
+            
+            ⚠️ Battery level has dropped to critical level!
+            
+            **Current Levels:**
+            • Master Battery: {{ states('sensor.deyeinvertermaster_summary_battery_soc') }}%
+            • Slave Battery: {{ states('sensor.deyeinverterslave_summary_battery_soc') }}%
+            • Average: {{ states('sensor.average_battery_soc') }}%
+            
+            **Recommended Actions:**
+            1. Reduce non-essential loads immediately
+            2. Check if solar generation is active
+            3. Consider switching to grid power
+            4. Monitor battery levels closely
+            
+            System switching to energy-saving mode.
+      
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.energy_saving_mode
+    mode: single
+  
+  # Voltage Issue Alert
+  - id: battery_voltage_issue_alert
+    alias: "Inverter: Voltage Issue Alert"
+    description: "Alert when battery voltage is out of normal range"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.battery_voltage_issue
+        to: 'on'
+        for:
+          minutes: 5
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "⚠️ WARNING: Battery Voltage Issue"
+          message: |
+            **VOLTAGE WARNING**
+            
+            Battery voltage outside normal range detected!
+            
+            **Current Readings:**
+            • Master Voltage: {{ states('sensor.deyeinvertermaster_battery_voltage') }}V
+            • Slave Voltage: {{ states('sensor.deyeinverterslave_battery_voltage') }}V
+            • Normal Range: 44V - 58V
+            
+            **Possible Causes:**
+            • Battery cell imbalance
+            • Charging system issue
+            • BMS malfunction
+            
+            Monitor closely and contact technician if persists.
+    mode: single
+  
+  # Solar Generation Issue Alert (Daytime Only)
+  - id: solar_generation_issue_alert
+    alias: "Inverter: Solar Generation Issue Alert"
+    description: "Alert when solar not generating during daylight hours"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.solar_generation_issue
+        to: 'on'
+        for:
+          minutes: 30  # Wait 30 minutes to confirm issue
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "⚠️ WARNING: Low Solar Generation"
+          message: |
+            **SOLAR GENERATION WARNING**
+            
+            Low or no solar generation detected during daylight hours.
+            
+            **Current Status:**
+            • Solar Power: {{ states('sensor.deyeinvertermaster_pv_power') }}W
+            • Time: {{ now().strftime('%H:%M') }}
+            • Expected: >100W during daylight
+            
+            **Possible Causes:**
+            • Heavy cloud cover
+            • Panel shading
+            • System fault
+            • Inverter issue
+            
+            Check weather conditions and panel status.
+    mode: single
+  
+  # Grid Connection Issue Alert
+  - id: grid_connection_issue_alert
+    alias: "Inverter: Grid Connection Issue Alert"
+    description: "Alert when grid voltage is abnormal"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.grid_connection_issue
+        to: 'on'
+        for:
+          minutes: 2
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "⚠️ WARNING: Grid Voltage Abnormal"
+          message: |
+            **GRID CONNECTION WARNING**
+            
+            Grid voltage outside normal range!
+            
+            **Current Reading:**
+            • Grid Voltage: {{ states('sensor.deyeinvertermaster_grid_voltage') }}V
+            • Normal Range: 200V - 253V
+            
+            **Status:**
+            • Battery SOC: {{ states('sensor.average_battery_soc') }}%
+            • Inverter Mode: {{ states('select.deyeinvertermaster_load_limit_exp_ess_non_ess') }}
+            
+            System monitoring. May switch to battery if needed.
+    mode: single
+  
+  # Inverter Recovery Notification
+  - id: inverter_recovery_notification
+    alias: "Inverter: System Recovery Notification"
+    description: "Notify when inverter system returns to normal"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.inverter_system_health
+        from: 'off'
+        to: 'on'
+        for:
+          minutes: 5
+    action:
+      - service: telegram_bot.send_message
+        data:
+          target: !secret telegram_chat_id
+          title: "✅ Inverter System Recovered"
+          message: |
+            **SYSTEM RECOVERY**
+            
+            Inverter system has returned to normal operation.
+            
+            **Current Status:**
+            • Master Inverter: {{ 'Online ✅' if is_state('binary_sensor.inverter_master_online', 'on') else 'Offline ❌' }}
+            • Slave Inverter: {{ 'Online ✅' if is_state('binary_sensor.inverter_slave_online', 'on') else 'Offline ❌' }}
+            • Average Battery: {{ states('sensor.average_battery_soc') }}%
+            • Battery Health Score: {{ states('sensor.battery_health_score') }}/100
+            • Errors: {{ states('sensor.inverter_error_summary') }}
+            
+            All systems operational.
+      
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.energy_saving_mode
+    mode: single
+
+#===============================================================================

@@ -40,7 +40,7 @@ template:
           last_scan: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
           devices: >
             {% set devices = [] %}
-            
+
             {# Add Home Assistant #}
             {% set ha_device = {
               'name': 'Home Assistant Server',
@@ -54,7 +54,7 @@ template:
               'last_seen': now().strftime('%Y-%m-%d %H:%M')
             } %}
             {{ devices.append(ha_device) }}
-            
+
             {# Add Router #}
             {% set router_device = {
               'name': 'Nokia Beacon 2 Router',
@@ -68,7 +68,7 @@ template:
               'last_seen': now().strftime('%Y-%m-%d %H:%M')
             } %}
             {{ devices.append(router_device) }}
-            
+
             {# Add discovered device tracker entities #}
             {% for entity in states.device_tracker %}
               {% if entity.attributes.source_type == 'router' and entity.attributes.ip %}
@@ -86,10 +86,10 @@ template:
                   'services': 'Unknown',
                   'last_seen': entity.last_changed.strftime('%Y-%m-%d %H:%M') if entity.last_changed else 'Unknown'
                 } %}
-                {{ devices.append(device) }}
+                {% set device_list = device_list + [device] %}
               {% endif %}
             {% endfor %}
-            
+
             {{ devices | sort(attribute='ip') }}
 
       - name: "Network Summary"
@@ -136,11 +136,11 @@ automation:
     condition:
       - condition: state
         entity_id: input_boolean.network_auto_scan
-        state: 'on'
+        state: "on"
     action:
       - service: homeassistant.update_entity
         target:
-          entity_id: 
+          entity_id:
             - sensor.network_active_devices
             - sensor.network_devices_table
 

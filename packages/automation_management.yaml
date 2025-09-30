@@ -165,7 +165,7 @@ automation:
     action:
       - service: notify.email_ha
         data:
-          title: "⚠️ System Performance Alert"
+          title: "⚠️ System Performance Alert (automation_management.yaml)"
           message: |
             System performance alert triggered:
 

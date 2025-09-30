@@ -3,7 +3,11 @@
 
 utility_meter:
   #----------------------------------------------------------------------------------------------------------------------      
-  # Eskom Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  # Eskom Sensors - Hourly, Daily, Weekly, Monthly, Quarterly, Yearly views
+
+  hourly_eskom_energy:
+    source: sensor.main_eskom_switch_energy
+    cycle: hourly
   daily_eskom_energy:
     source: sensor.main_eskom_switch_power
     cycle: daily
@@ -22,9 +26,12 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Geyser Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_geyser_new_power:
+    source: sensor.geyser_new_power
+    cycle: hourly  
   daily_geyser_new_power:
     source: sensor.geyser_new_power
-    cycle: daily
+    cycle: hourly
   weekly_geyser_new_power:
     source: sensor.geyser_new_power
     cycle: weekly
@@ -40,6 +47,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Pool & Outbuildings Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
+  hourly_pool_outbuilding_power:
+    source: sensor.pool_outbuilding_power
+    cycle: hourly
   daily_pool_outbuilding_power:
     source: sensor.pool_outbuilding_power
     cycle: daily
@@ -58,6 +68,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Freezer Garage Centre Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views      
+  hourly_freezer_garage_centre_power:
+    source: sensor.freezer_garage_centre_power
+    cycle: hourly
   daily_freezer_garage_centre_power:
     source: sensor.freezer_garage_centre_power
     cycle: daily
@@ -76,6 +89,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Freezer Garage Left Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: hourly
   daily_freezer_garage_left_power:
     source: sensor.freezer_garage_left_power
     cycle: daily
@@ -94,6 +110,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Inverter Power Room Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_inverter_power_room_power:
+    source: sensor.inverter_power_room_power
+    cycle: hourly
   daily_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: daily
@@ -112,6 +131,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 1 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
+  hourly_plugs_1_power:
+    source: sensor.plugs_1_power
+    cycle: hourly
   daily_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: daily
@@ -130,6 +152,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 2 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
+  hourly_plugs_2_power:
+    source: sensor.plugs_2_power
+    cycle: hourly
   daily_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: daily
@@ -148,6 +173,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 3 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
+  hourly_plugs_3_power:
+    source: sensor.plugs_3_power
+    cycle: hourly
   daily_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: daily
@@ -165,7 +193,10 @@ utility_meter:
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
-  # Plugs Kas Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
+  # Plugs Kas Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views  
+  hourly_plugs_kas_power:
+    source: sensor.plugs_kas_power
+    cycle: hourly
   daily_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: daily
@@ -184,6 +215,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Salon Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_salon_power:
+    source: sensor.salon_power
+    cycle: hourly
   daily_salon_power:
     source: sensor.salon_power
     cycle: daily
@@ -202,6 +236,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Study Sensors - Daily, Weekly, Monthly, Quarterly, Yearly, Hourly views
+  hourly_study_power:
+    source: sensor.study_power
+    cycle: hourly
   daily_study_power:
     source: sensor.study_power
     cycle: daily
@@ -217,12 +254,13 @@ utility_meter:
   yearly_study_power:
     source: sensor.study_power
     cycle: yearly
-  hourly_study_power:
-    source: sensor.study_power
-    cycle: hourly
+  
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Study Aircon Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_study_aircon_power:
+    source: sensor.study_aircon_power
+    cycle: hourly
   daily_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: daily
@@ -241,6 +279,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Routers Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_routers_power:
+    source: sensor.routers_power
+    cycle: hourly
   daily_routers_power:
     source: sensor.routers_power
     cycle: daily
@@ -259,6 +300,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Woonstel Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_woonstel_energy:
+    source: sensor.woonstel_energy
+    cycle: hourly
   daily_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: daily
@@ -277,6 +321,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Geyser External Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_geyser_ext_energy:
+    source: sensor.geyser_ext_energy
+    cycle: hourly
   daily_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: daily
@@ -295,6 +342,9 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Pool Pump Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  hourly_pool_pump_energy:
+    source: sensor.pool_pump_energy
+    cycle: hourly
   daily_pool_pump_energy:
     source: sensor.pool_pump_energy
     cycle: daily
