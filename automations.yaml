@@ -315,7 +315,6 @@
 - id: "1757668937096"
   alias: Metrofibre Low Speed Alert
   description: Alert when speeds are significantly below thresholds
-  #=====================================
   triggers:
     - entity_id: binary_sensor.speed_critically_low
       to: "on"
@@ -345,38 +344,6 @@
     - action: telegram_bot.send_message
       data: {}
   mode: single
-- id: "1757670100298"
-  alias: Metrofibre Disconnection Alert
-  description: Immediate alert for connection disconnections
-  triggers:
-    - entity_id: binary_sensor.connection_disconnected
-      to: "on"
-      trigger: state
-  conditions:
-    - condition: state
-      entity_id: input_boolean.disconnection_alerts
-      state: "on"
-  actions:
-    - action: telegram_bot.send_message
-      data: {}
-  mode: single
-- id: "1757670140626"
-  alias: Metrofibre Low Speed Alert
-  description: Alert when speeds are significantly below thresholds
-  triggers:
-    - entity_id: binary_sensor.speed_critically_low
-      to: "on"
-      for:
-        minutes: 5
-      trigger: state
-  conditions:
-    - condition: state
-      entity_id: input_boolean.low_speed_alerts
-      state: "on"
-  actions:
-    - action: telegram_bot.send_message
-      data: {}
-  mode: single
 
 #================================================================================
 # Prepaid Meter Automations
@@ -385,7 +352,7 @@
 #===============================================================================
 - id: "1717429630744"
   alias: Prepaid meter recharge
-  description: ""
+  description: "Monitors prepaid meter units and updates inverter totals"  # ADD THIS"
   trigger:
     - platform: state
       entity_id:
@@ -404,7 +371,6 @@
         entity_id: input_number.prepaid_meter_inverter_total_units
   mode: single
 #================================================================================
-
 - id: "1680707528756"
   alias: InverterConfig Update Times
   description: Automation fetches TimeOfUse values and updates HA/Inverter
@@ -578,10 +544,10 @@
               target:
                 entity_id: select.deyeinvertermaster_inverter_basic_settings_sync_clock
   mode: single
-
+#===============================================================================
   # Google Drive Backup Automations
 # Add these to your automations.yaml file or create a new file: automations_google_drive.yaml
-
+#===============================================================================
 # Daily Google Drive Backup at 09:00
 - id: google_drive_daily_backup
   alias: "Google Drive Daily Backup"
@@ -775,28 +741,25 @@
     - condition: template
       value_template: "{{ now().day == 1 }}"
   action:
-    - service: script.cleanup_google_drive_backups
-
-    - delay:
-        minutes: 5
-
+    # Call the health check script
     - service: script.google_drive_backup_health_check
 
     - delay:
         minutes: 2
 
-    - service: telegram_bot.send_message # Replace with your actual device name
+    # Send notification
+    - service: telegram_bot.send_message
       data:
         title: "🧹 Monthly Google Drive Maintenance"
         message: >
           Monthly Google Drive maintenance completed!
 
-          • Old backups cleaned up
           • Health check performed
           • System optimized
-          • Status: {{ states('sensor.google_drive_backup_status') }}
+          • Status: {{ states('sensor.google_drive_backup_status') | default('Unknown') }}
         data:
           tag: "monthly_maintenance"
+  mode: single
 
 # Pre-Update Emergency Backup
 - id: google_drive_pre_update_backup

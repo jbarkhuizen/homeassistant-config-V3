@@ -2,9 +2,9 @@
 # Purpose: Comprehensive energy management for 2x 8kW Sunsunk inverters
 # Includes your existing automation plus enhanced 09:00 daily management
 #===============================================================================
-
 automation:
-  # Your existing automation (preserved exactly as is)
+  # Added fromSmart Home Integration
+  # https://github.com/tomatensaus/DeyeSolarDesktop/blob/main/packages/essentials_automation.yaml
   - id: '1686299812078'
     alias: 'Inverter: Switch to Export essentials/Non-Essentials when sun sets/rises'
     description: This stops the export to non-essentials from the battery when the sun
@@ -40,8 +40,9 @@ automation:
           target:
             entity_id: select.deyeinvertermaster_load_limit_exp_ess_non_ess
     mode: single
-
+#===============================================================================
   # Enhanced 09:00 Daily Inverter System Check
+  # Added with Claude.ai
   - id: inverter_daily_morning_check
     alias: 'Inverter: Daily Morning System Check at 09:00'
     description: 'Comprehensive daily check of both 8kW Sunsunk inverters at 09:00'
@@ -65,7 +66,7 @@ automation:
             # Add your second inverter entities here
             # - sensor.deyeinverterslave_battery_soc
             # - sensor.deyeinverterslave_pv_power
-      
+#===============================================================================      
       # Log current system status
       - service: system_log.write
         data:
@@ -76,7 +77,7 @@ automation:
             PV Power: {{ states('sensor.deyeinvertermaster_pv_power') }}W
             Load Power: {{ states('sensor.deyeinvertermaster_load_power') }}W
           level: info
-      
+#===============================================================================           
       # Send status notification
       - service: notify.persistent_notification
         data:
@@ -95,7 +96,7 @@ automation:
             
             **Today's Target:** {{ states('input_number.solar_generation_target') }}kWh
           notification_id: daily_inverter_check
-
+#===============================================================================      
   # Smart Energy Mode Optimization at 09:00
   - id: inverter_daily_energy_optimization
     alias: 'Inverter: Daily Energy Mode Optimization at 09:00'
@@ -146,7 +147,7 @@ automation:
               option: "Automatic"
             target:
               entity_id: input_select.energy_mode
-
+#===============================================================================      
   # Battery Health Check at 09:00
   - id: inverter_battery_health_check
     alias: 'Inverter: Battery Health Check at 09:00'
@@ -189,7 +190,7 @@ automation:
             - service: input_boolean.turn_off
               target:
                 entity_id: input_boolean.energy_saving_mode
-
+#===============================================================================      
   # Weekly Inverter Performance Report (Mondays at 09:00)
   - id: inverter_weekly_performance_report
     alias: 'Inverter: Weekly Performance Report'
@@ -248,7 +249,7 @@ automation:
       
       - delay:
           seconds: 5
-      
+#===============================================================================            
       # Send summary if any issues detected
       - choose:
         - conditions:
@@ -275,9 +276,7 @@ automation:
               message: "Daily inverter health check completed - All systems healthy (Score: {{ states('sensor.battery_health_score') }})"
               level: info
     mode: single
-
 #===============================================================================6504
-
 # Supporting sensors for enhanced monitoring
 template:
   - sensor:
@@ -294,7 +293,7 @@ template:
             0
           {% endif %}
         icon: mdi:solar-power
-
+#===============================================================================      
       # Battery cycle estimation
       - name: "Battery Status Summary"
         unique_id: battery_status_summary
@@ -324,7 +323,7 @@ template:
           {% else %}
             mdi:battery-alert
           {% endif %}
-
+#===============================================================================      
       # System operation mode tracker
       - name: "Inverter Operation Mode"
         unique_id: inverter_operation_mode
@@ -339,4 +338,5 @@ template:
             {{ current_mode }} ({{ energy_mode }})
           {% endif %}
         icon: mdi:power-settings
+#===============================================================================      
 

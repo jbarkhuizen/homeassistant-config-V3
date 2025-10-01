@@ -1,0 +1,773 @@
+# packages/dual_freezer_monitoring.yaml
+# Comprehensive Dual Freezer Monitoring System
+# Created: 2025-10-01
+# Purpose: Monitor both freezers with alerts, cost tracking, and anomaly detection
+
+#==============================================================================
+# INPUT NUMBERS - Configuration for thresholds and settings
+#==============================================================================
+input_number:
+  # Freezer Centre Thresholds
+  freezer_centre_normal_threshold:
+    name: Freezer Centre Normal Threshold
+    min: 0
+    max: 500
+    step: 10
+    initial: 150
+    unit_of_measurement: "W"
+    icon: mdi:gauge
+  
+  freezer_centre_high_threshold:
+    name: Freezer Centre High Threshold
+    min: 0
+    max: 1000
+    step: 10
+    initial: 250
+    unit_of_measurement: "W"
+    icon: mdi:alert
+  
+  freezer_centre_critical_threshold:
+    name: Freezer Centre Critical Threshold
+    min: 0
+    max: 2000
+    step: 50
+    initial: 400
+    unit_of_measurement: "W"
+    icon: mdi:alert-circle
+  
+  # Freezer Left Thresholds
+  freezer_left_normal_threshold:
+    name: Freezer Left Normal Threshold
+    min: 0
+    max: 500
+    step: 10
+    initial: 150
+    unit_of_measurement: "W"
+    icon: mdi:gauge
+  
+  freezer_left_high_threshold:
+    name: Freezer Left High Threshold
+    min: 0
+    max: 1000
+    step: 10
+    initial: 250
+    unit_of_measurement: "W"
+    icon: mdi:alert
+  
+  freezer_left_critical_threshold:
+    name: Freezer Left Critical Threshold
+    min: 0
+    max: 2000
+    step: 50
+    initial: 400
+    unit_of_measurement: "W"
+    icon: mdi:alert-circle
+  
+  # Shared Settings
+  electricity_rate_freezers:
+    name: Electricity Rate (Freezers)
+    min: 0
+    max: 10
+    step: 0.01
+    initial: 2.97
+    unit_of_measurement: "ZAR/kWh"
+    icon: mdi:currency-usd
+
+#==============================================================================
+# INPUT BOOLEANS - Enable/disable monitoring features
+#==============================================================================
+input_boolean:
+  freezer_monitoring_enabled:
+    name: Freezer Monitoring Enabled
+    initial: true
+    icon: mdi:monitor
+  
+  freezer_telegram_alerts:
+    name: Freezer Telegram Alerts
+    initial: true
+    icon: mdi:send
+  
+  freezer_email_alerts:
+    name: Freezer Email Alerts
+    initial: true
+    icon: mdi:email-alert
+  
+  freezer_anomaly_detection:
+    name: Freezer Anomaly Detection
+    initial: true
+    icon: mdi:chart-bell-curve
+
+#==============================================================================
+# TEMPLATE SENSORS - Advanced monitoring and calculations
+#==============================================================================
+template:
+  - sensor:
+      # FREEZER CENTRE STATUS
+      - name: "Freezer Centre Status"
+        unique_id: freezer_centre_status
+        state: >
+          {% set power = states('sensor.freezer_garage_centre_power') | float(0) %}
+          {% set normal = states('input_number.freezer_centre_normal_threshold') | float(150) %}
+          {% set high = states('input_number.freezer_centre_high_threshold') | float(250) %}
+          {% set critical = states('input_number.freezer_centre_critical_threshold') | float(400) %}
+          {% if power < 5 %}
+            Off
+          {% elif power < normal %}
+            Normal
+          {% elif power < high %}
+            Above Normal
+          {% elif power < critical %}
+            High
+          {% else %}
+            Critical
+          {% endif %}
+        icon: >
+          {% set status = states('sensor.freezer_centre_status') %}
+          {% if status == 'Off' %}
+            mdi:power-off
+          {% elif status == 'Normal' %}
+            mdi:check-circle
+          {% elif status in ['Above Normal', 'High'] %}
+            mdi:alert
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+      
+      # FREEZER LEFT STATUS
+      - name: "Freezer Left Status"
+        unique_id: freezer_left_status
+        state: >
+          {% set power = states('sensor.freezer_garage_left_power') | float(0) %}
+          {% set normal = states('input_number.freezer_left_normal_threshold') | float(150) %}
+          {% set high = states('input_number.freezer_left_high_threshold') | float(250) %}
+          {% set critical = states('input_number.freezer_left_critical_threshold') | float(400) %}
+          {% if power < 5 %}
+            Off
+          {% elif power < normal %}
+            Normal
+          {% elif power < high %}
+            Above Normal
+          {% elif power < critical %}
+            High
+          {% else %}
+            Critical
+          {% endif %}
+        icon: >
+          {% set status = states('sensor.freezer_left_status') %}
+          {% if status == 'Off' %}
+            mdi:power-off
+          {% elif status == 'Normal' %}
+            mdi:check-circle
+          {% elif status in ['Above Normal', 'High'] %}
+            mdi:alert
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+      
+      # COST CALCULATIONS - CENTRE
+      - name: "Freezer Centre Daily Cost"
+        unique_id: freezer_centre_daily_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.daily_freezer_garage_centre_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      - name: "Freezer Centre Monthly Cost"
+        unique_id: freezer_centre_monthly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.monthly_freezer_garage_centre_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      - name: "Freezer Centre Yearly Cost"
+        unique_id: freezer_centre_yearly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.yearly_freezer_garage_centre_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      # COST CALCULATIONS - LEFT
+      - name: "Freezer Left Daily Cost"
+        unique_id: freezer_left_daily_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.daily_freezer_garage_left_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      - name: "Freezer Left Monthly Cost"
+        unique_id: freezer_left_monthly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.monthly_freezer_garage_left_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      - name: "Freezer Left Yearly Cost"
+        unique_id: freezer_left_yearly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {% set energy = states('sensor.yearly_freezer_garage_left_power') | float(0) %}
+          {% set rate = states('input_number.electricity_rate_freezers') | float(2.97) %}
+          {{ (energy * rate) | round(2) }}
+      
+      # COMBINED COSTS
+      - name: "Both Freezers Daily Cost"
+        unique_id: both_freezers_daily_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {{ (states('sensor.freezer_centre_daily_cost') | float(0) + 
+              states('sensor.freezer_left_daily_cost') | float(0)) | round(2) }}
+      
+      - name: "Both Freezers Monthly Cost"
+        unique_id: both_freezers_monthly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {{ (states('sensor.freezer_centre_monthly_cost') | float(0) + 
+              states('sensor.freezer_left_monthly_cost') | float(0)) | round(2) }}
+      
+      - name: "Both Freezers Yearly Cost"
+        unique_id: both_freezers_yearly_cost
+        unit_of_measurement: "ZAR"
+        device_class: monetary
+        state: >
+          {{ (states('sensor.freezer_centre_yearly_cost') | float(0) + 
+              states('sensor.freezer_left_yearly_cost') | float(0)) | round(2) }}
+      
+      # ANOMALY DETECTION - CENTRE
+      - name: "Freezer Centre Anomaly Percentage"
+        unique_id: freezer_centre_anomaly_percentage
+        unit_of_measurement: "%"
+        state: >
+          {% set current = states('sensor.freezer_garage_centre_power') | float(0) %}
+          {% set avg = state_attr('sensor.freezer_garage_centre_power', 'mean') | default(current) | float(0) %}
+          {% if avg > 0 %}
+            {{ (((current - avg) / avg) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+      
+      # ANOMALY DETECTION - LEFT
+      - name: "Freezer Left Anomaly Percentage"
+        unique_id: freezer_left_anomaly_percentage
+        unit_of_measurement: "%"
+        state: >
+          {% set current = states('sensor.freezer_garage_left_power') | float(0) %}
+          {% set avg = state_attr('sensor.freezer_garage_left_power', 'mean') | default(current) | float(0) %}
+          {% if avg > 0 %}
+            {{ (((current - avg) / avg) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+  
+  - binary_sensor:
+      # FREEZER CENTRE ALERTS
+      - name: "Freezer Centre High Power Alert"
+        unique_id: freezer_centre_high_power_alert
+        state: >
+          {% set power = states('sensor.freezer_garage_centre_power') | float(0) %}
+          {% set threshold = states('input_number.freezer_centre_high_threshold') | float(250) %}
+          {{ power > threshold }}
+        device_class: problem
+      
+      - name: "Freezer Centre Anomaly Detected"
+        unique_id: freezer_centre_anomaly_detected
+        state: >
+          {{ states('sensor.freezer_centre_anomaly_percentage') | float(0) > 50 }}
+        device_class: problem
+      
+      # FREEZER LEFT ALERTS
+      - name: "Freezer Left High Power Alert"
+        unique_id: freezer_left_high_power_alert
+        state: >
+          {% set power = states('sensor.freezer_garage_left_power') | float(0) %}
+          {% set threshold = states('input_number.freezer_left_high_threshold') | float(250) %}
+          {{ power > threshold }}
+        device_class: problem
+      
+      - name: "Freezer Left Anomaly Detected"
+        unique_id: freezer_left_anomaly_detected
+        state: >
+          {{ states('sensor.freezer_left_anomaly_percentage') | float(0) > 50 }}
+        device_class: problem
+
+#==============================================================================
+# AUTOMATIONS - Monitoring and alerting
+#==============================================================================
+automation:
+  #============================================================================
+  # FREEZER CENTRE AUTOMATIONS
+  #============================================================================
+  
+  # High Power Alert - Centre
+  - id: freezer_centre_high_power_alert
+    alias: "Freezer Centre High Power Alert"
+    description: "Alert when centre freezer power exceeds threshold"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_centre_power
+        above: input_number.freezer_centre_high_threshold
+        for:
+          minutes: 5
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      # Telegram Notification
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_telegram_alerts
+                state: "on"
+            sequence:
+              - service: telegram_bot.send_message
+                data:
+                  title: "⚠️ Freezer Centre High Power"
+                  message: >
+                    Centre freezer consuming high power!
+                    
+                    • Power: {{ states('sensor.freezer_garage_centre_power') }}W
+                    • Threshold: {{ states('input_number.freezer_centre_high_threshold') }}W
+                    • Status: {{ states('sensor.freezer_centre_status') }}
+                    • Location: Garage Centre
+                    • Time: {{ now().strftime('%H:%M:%S') }}
+                    
+                    Check door seal and defrost cycle.
+                  data:
+                    tag: "freezer_centre_high"
+      
+      # Email Notification
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_email_alerts
+                state: "on"
+            sequence:
+              - service: notify.email_ha
+                data:
+                  title: "⚠️ Freezer Alert: Centre Freezer High Power"
+                  message: |
+                    FREEZER CENTRE HIGH POWER ALERT
+                    
+                    Your centre freezer in the garage is consuming unusually high power.
+                    
+                    CURRENT READINGS:
+                    • Power Consumption: {{ states('sensor.freezer_garage_centre_power') }}W
+                    • Alert Threshold: {{ states('input_number.freezer_centre_high_threshold') }}W
+                    • Status: {{ states('sensor.freezer_centre_status') }}
+                    • Anomaly Deviation: {{ states('sensor.freezer_centre_anomaly_percentage') }}%
+                    
+                    RECOMMENDED ACTIONS:
+                    1. Check that the freezer door is properly sealed
+                    2. Verify the defrost cycle is functioning correctly
+                    3. Ensure proper ventilation around the freezer
+                    4. Check for ice buildup
+                    
+                    Alert Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+    mode: single
+  
+  # Critical Power Alert - Centre
+  - id: freezer_centre_critical_alert
+    alias: "Freezer Centre Critical Alert"
+    description: "Immediate alert for critical power consumption"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_centre_power
+        above: input_number.freezer_centre_critical_threshold
+        for:
+          minutes: 2
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      # Always send both for critical alerts
+      - service: telegram_bot.send_message
+        data:
+          title: "🚨 CRITICAL: Freezer Centre"
+          message: >
+            CRITICAL: Centre freezer malfunction!
+            
+            • Power: {{ states('sensor.freezer_garage_centre_power') }}W
+            • Critical Level: {{ states('input_number.freezer_centre_critical_threshold') }}W
+            • Status: {{ states('sensor.freezer_centre_status') }}
+            
+            IMMEDIATE ACTION REQUIRED!
+          data:
+            tag: "freezer_centre_critical"
+      
+      - service: notify.email_ha
+        data:
+          title: "🚨 CRITICAL ALERT: Centre Freezer Malfunction"
+          message: |
+            CRITICAL FREEZER MALFUNCTION - IMMEDIATE ACTION REQUIRED
+            
+            Your centre freezer is consuming {{ states('sensor.freezer_garage_centre_power') }}W
+            which is {{ states('sensor.freezer_centre_anomaly_percentage') }}% above normal.
+            
+            This indicates a serious malfunction.
+            
+            IMMEDIATE ACTIONS:
+            1. Check freezer immediately
+            2. Verify compressor operation
+            3. Check for unusual noises
+            4. Consider emergency food transfer
+            
+            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+    mode: single
+  
+  # Offline Alert - Centre
+  - id: freezer_centre_offline_alert
+    alias: "Freezer Centre Offline Alert"
+    description: "Alert when centre freezer loses power"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_centre_power
+        below: 1
+        for:
+          hours: 2
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      - service: telegram_bot.send_message
+        data:
+          title: "🚨 CRITICAL: Centre Freezer OFFLINE"
+          message: >
+            Centre freezer is OFFLINE!
+            
+            • Power: {{ states('sensor.freezer_garage_centre_power') }}W
+            • Duration: 2+ hours
+            • Food spoilage risk: HIGH
+            
+            Check power immediately!
+          data:
+            tag: "freezer_centre_offline"
+      
+      - service: notify.email_ha
+        data:
+          title: "🚨 CRITICAL: Centre Freezer Power Failure"
+          message: |
+            CRITICAL POWER FAILURE - CENTRE FREEZER
+            
+            Your centre freezer has been offline for over 2 hours.
+            
+            IMMEDIATE ACTIONS REQUIRED:
+            1. Check circuit breaker
+            2. Check power outlet and cord
+            3. Assess food safety
+            4. Consider food transfer
+            
+            Time Offline: 2+ hours
+            Risk Level: CRITICAL - Food spoilage imminent
+    mode: single
+  
+  #============================================================================
+  # FREEZER LEFT AUTOMATIONS
+  #============================================================================
+  
+  # High Power Alert - Left
+  - id: freezer_left_high_power_alert
+    alias: "Freezer Left High Power Alert"
+    description: "Alert when left freezer power exceeds threshold"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_left_power
+        above: input_number.freezer_left_high_threshold
+        for:
+          minutes: 5
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_telegram_alerts
+                state: "on"
+            sequence:
+              - service: telegram_bot.send_message
+                data:
+                  title: "⚠️ Freezer Left High Power"
+                  message: >
+                    Left freezer consuming high power!
+                    
+                    • Power: {{ states('sensor.freezer_garage_left_power') }}W
+                    • Threshold: {{ states('input_number.freezer_left_high_threshold') }}W
+                    • Status: {{ states('sensor.freezer_left_status') }}
+                    • Location: Garage Left
+                    • Time: {{ now().strftime('%H:%M:%S') }}
+                    
+                    Check door seal and defrost cycle.
+                  data:
+                    tag: "freezer_left_high"
+      
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_email_alerts
+                state: "on"
+            sequence:
+              - service: notify.email_ha
+                data:
+                  title: "⚠️ Freezer Alert: Left Freezer High Power"
+                  message: |
+                    FREEZER LEFT HIGH POWER ALERT
+                    
+                    Your left freezer in the garage is consuming unusually high power.
+                    
+                    CURRENT READINGS:
+                    • Power Consumption: {{ states('sensor.freezer_garage_left_power') }}W
+                    • Alert Threshold: {{ states('input_number.freezer_left_high_threshold') }}W
+                    • Status: {{ states('sensor.freezer_left_status') }}
+                    • Anomaly Deviation: {{ states('sensor.freezer_left_anomaly_percentage') }}%
+                    
+                    RECOMMENDED ACTIONS:
+                    1. Check that the freezer door is properly sealed
+                    2. Verify the defrost cycle is functioning correctly
+                    3. Ensure proper ventilation around the freezer
+                    4. Check for ice buildup
+                    
+                    Alert Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+    mode: single
+  
+  # Critical Power Alert - Left
+  - id: freezer_left_critical_alert
+    alias: "Freezer Left Critical Alert"
+    description: "Immediate alert for critical power consumption"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_left_power
+        above: input_number.freezer_left_critical_threshold
+        for:
+          minutes: 2
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      - service: telegram_bot.send_message
+        data:
+          title: "🚨 CRITICAL: Freezer Left"
+          message: >
+            CRITICAL: Left freezer malfunction!
+            
+            • Power: {{ states('sensor.freezer_garage_left_power') }}W
+            • Critical Level: {{ states('input_number.freezer_left_critical_threshold') }}W
+            • Status: {{ states('sensor.freezer_left_status') }}
+            
+            IMMEDIATE ACTION REQUIRED!
+          data:
+            tag: "freezer_left_critical"
+      
+      - service: notify.email_ha
+        data:
+          title: "🚨 CRITICAL ALERT: Left Freezer Malfunction"
+          message: |
+            CRITICAL FREEZER MALFUNCTION - IMMEDIATE ACTION REQUIRED
+            
+            Your left freezer is consuming {{ states('sensor.freezer_garage_left_power') }}W
+            which is {{ states('sensor.freezer_left_anomaly_percentage') }}% above normal.
+            
+            This indicates a serious malfunction.
+            
+            IMMEDIATE ACTIONS:
+            1. Check freezer immediately
+            2. Verify compressor operation
+            3. Check for unusual noises
+            4. Consider emergency food transfer
+            
+            Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+    mode: single
+  
+  # Offline Alert - Left
+  - id: freezer_left_offline_alert
+    alias: "Freezer Left Offline Alert"
+    description: "Alert when left freezer loses power"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.freezer_garage_left_power
+        below: 1
+        for:
+          hours: 2
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      - service: telegram_bot.send_message
+        data:
+          title: "🚨 CRITICAL: Left Freezer OFFLINE"
+          message: >
+            Left freezer is OFFLINE!
+            
+            • Power: {{ states('sensor.freezer_garage_left_power') }}W
+            • Duration: 2+ hours
+            • Food spoilage risk: HIGH
+            
+            Check power immediately!
+          data:
+            tag: "freezer_left_offline"
+      
+      - service: notify.email_ha
+        data:
+          title: "🚨 CRITICAL: Left Freezer Power Failure"
+          message: |
+            CRITICAL POWER FAILURE - LEFT FREEZER
+            
+            Your left freezer has been offline for over 2 hours.
+            
+            IMMEDIATE ACTIONS REQUIRED:
+            1. Check circuit breaker
+            2. Check power outlet and cord
+            3. Assess food safety
+            4. Consider food transfer
+            
+            Time Offline: 2+ hours
+            Risk Level: CRITICAL - Food spoilage imminent
+    mode: single
+  
+  #============================================================================
+  # DAILY & WEEKLY REPORTS
+  #============================================================================
+  
+  # Daily Report (09:00)
+  - id: freezers_daily_report
+    alias: "Freezers Daily Report"
+    description: "Daily freezer performance report at 09:00"
+    trigger:
+      - platform: time
+        at: "09:00:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+    action:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_telegram_alerts
+                state: "on"
+            sequence:
+              - service: telegram_bot.send_message
+                data:
+                  title: "❄️ Daily Freezer Report"
+                  message: >
+                    DUAL FREEZER DAILY REPORT
+                    {{ now().strftime('%Y-%m-%d') }}
+                    
+                    💰 YESTERDAY'S COSTS:
+                    • Centre: R{{ states('sensor.freezer_centre_daily_cost') }}
+                    • Left: R{{ states('sensor.freezer_left_daily_cost') }}
+                    • Combined: R{{ states('sensor.both_freezers_daily_cost') }}
+                    
+                    📊 STATUS:
+                    • Centre: {{ states('sensor.freezer_centre_status') }}
+                    • Left: {{ states('sensor.freezer_left_status') }}
+                    
+                    💡 MONTH TO DATE:
+                    • Total Cost: R{{ states('sensor.both_freezers_monthly_cost') }}
+                  data:
+                    tag: "freezers_daily"
+      
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.freezer_email_alerts
+                state: "on"
+            sequence:
+              - service: notify.email_ha
+                data:
+                  title: "❄️ Daily Freezer Performance Report"
+                  message: |
+                    DUAL FREEZER DAILY REPORT
+                    {{ now().strftime('%Y-%m-%d') }}
+                    
+                    YESTERDAY'S COSTS:
+                    • Centre Freezer: R{{ states('sensor.freezer_centre_daily_cost') }}
+                    • Left Freezer: R{{ states('sensor.freezer_left_daily_cost') }}
+                    • Combined Total: R{{ states('sensor.both_freezers_daily_cost') }}
+                    
+                    ENERGY CONSUMPTION:
+                    • Centre: {{ states('sensor.daily_freezer_garage_centre_power') }} kWh
+                    • Left: {{ states('sensor.daily_freezer_garage_left_power') }} kWh
+                    
+                    OPERATIONAL STATUS:
+                    • Centre Freezer: {{ states('sensor.freezer_centre_status') }}
+                    • Left Freezer: {{ states('sensor.freezer_left_status') }}
+                    
+                    MONTH TO DATE:
+                    • Combined Monthly Cost: R{{ states('sensor.both_freezers_monthly_cost') }}
+                    • Centre Monthly: R{{ states('sensor.freezer_centre_monthly_cost') }}
+                    • Left Monthly: R{{ states('sensor.freezer_left_monthly_cost') }}
+                    
+                    Both freezers are operating {{ 'normally' if is_state('sensor.freezer_centre_status', 'Normal') and is_state('sensor.freezer_left_status', 'Normal') else 'with issues - check immediately' }}.
+    mode: single
+  
+  # Weekly Summary (Sunday 09:00)
+  - id: freezers_weekly_summary
+    alias: "Freezers Weekly Summary"
+    description: "Comprehensive weekly report on Sundays"
+    trigger:
+      - platform: time
+        at: "09:00:00"
+    condition:
+      - condition: time
+        weekday:
+          - sun
+      - condition: state
+        entity_id: input_boolean.freezer_monitoring_enabled
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.freezer_email_alerts
+        state: "on"
+    action:
+      - service: notify.email_ha
+        data:
+          title: "❄️ Weekly Freezer Performance Summary"
+          message: |
+            DUAL FREEZER WEEKLY SUMMARY
+            {{ now().strftime('%Y-%m-%d') }}
+            
+            WEEKLY COSTS:
+            • Centre Freezer: R{{ states('sensor.freezer_centre_monthly_cost') }}
+            • Left Freezer: R{{ states('sensor.freezer_left_monthly_cost') }}
+            • Combined Week: R{{ (states('sensor.weekly_freezer_garage_centre_power')|float(0) + states('sensor.weekly_freezer_garage_left_power')|float(0)) * states('input_number.electricity_rate_freezers')|float(2.97) }}
+            
+            MONTHLY PERFORMANCE:
+            • Month to Date: R{{ states('sensor.both_freezers_monthly_cost') }}
+            • Centre MTD: R{{ states('sensor.freezer_centre_monthly_cost') }}
+            • Left MTD: R{{ states('sensor.freezer_left_monthly_cost') }}
+            
+            YEARLY TOTALS:
+            • Year to Date: R{{ states('sensor.both_freezers_yearly_cost') }}
+            • Centre YTD: R{{ states('sensor.freezer_centre_yearly_cost') }}
+            • Left YTD: R{{ states('sensor.freezer_left_yearly_cost') }}
+            
+            ENERGY CONSUMPTION:
+            • Centre This Week: {{ states('sensor.weekly_freezer_garage_centre_power') }} kWh
+            • Left This Week: {{ states('sensor.weekly_freezer_garage_left_power') }} kWh
+            
+            OPERATIONAL STATUS:
+            • Centre Freezer: {{ states('sensor.freezer_centre_status') }}
+            • Left Freezer: {{ states('sensor.freezer_left_status') }}
+            
+            HEALTH INDICATORS:
+            • Centre Anomalies: {{ 'Detected' if is_state('binary_sensor.freezer_centre_anomaly_detected', 'on') else 'None' }}
+            • Left Anomalies: {{ 'Detected' if is_state('binary_sensor.freezer_left_anomaly_detected', 'on') else 'None' }}
+            Your freezers are {{ 'operating normally' if is_state('sensor.freezer_centre_status', 'Normal') and is_state('sensor.freezer_left_status', 'Normal') else 'experiencing issues - inspection recommended' }}.
+            mode: single

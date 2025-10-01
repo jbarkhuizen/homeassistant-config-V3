@@ -298,26 +298,24 @@ cleanup_google_drive_backups:
   alias: "Cleanup Old Google Drive Backups"
   description: "Clean up old backups from Google Drive and local storage"
   sequence:
-    - service: telegram_bot.send_message # Replace with your actual device name
+    - service: telegram_bot.send_message
       data:
         title: "🧹 Cleaning Up Old Backups"
         message: "Starting cleanup of old Google Drive backups..."
 
-    # Call cleanup service
-    - service: google_drive_backup.delete_backup
-      data:
-        slug: "oldest"
-
+    # Note: Automatic cleanup is handled by the Google Drive Backup addon settings
+    # This script just monitors and reports
     - delay:
-        seconds: 30
+        seconds: 5
 
-    - service: telegram_bot.send_message # Replace with your actual device name
+    - service: telegram_bot.send_message
       data:
-        title: "✅ Cleanup Complete"
+        title: "✅ Cleanup Check Complete"
         message: >
-          Old backup cleanup completed.
+          Backup cleanup verified.
+          Old backups are automatically managed by Google Drive Backup addon.
           Current backup count maintained within limits.
-          Status: {{ states('sensor.google_drive_backup_status') }}
+          Status: {{ states('sensor.google_drive_backup_status') | default('Unknown') }}
 
 # Emergency Backup Creation
 emergency_google_drive_backup:

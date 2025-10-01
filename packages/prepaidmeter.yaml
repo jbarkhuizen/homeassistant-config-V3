@@ -29,6 +29,8 @@ input_number:
     mode: box
 #===============================================================================    
 # Prepaid Input Helpers
+# Added with Claude.ai
+#================================================================================
   prepaid_units_to_add:
     name: Units to Add
     initial: 0
@@ -36,7 +38,6 @@ input_number:
     max: 2000
     step: 1
     unit_of_measurement: kWh
-
 #---------------------------------------------------------------------
   monthly_prepaid_units:
     name: "Monthly Prepaid Units"
@@ -48,7 +49,6 @@ input_number:
     icon: mdi:flash   
     
 #---------------------------------------------------------------------    
-
 input_button:
   confirm_units_purchase:
     name: Add Eskom Units

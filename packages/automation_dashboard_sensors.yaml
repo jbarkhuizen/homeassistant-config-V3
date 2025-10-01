@@ -1,0 +1,93 @@
+# packages/automation_dashboard_sensors.yaml
+# Automation Dashboard Management Sensors
+# Created: 2025-09-30
+# Purpose: Provide detailed automation information for management dashboard
+
+template:
+  - sensor:
+      # Count active automations
+      - name: "Active Automations Count"
+        unique_id: active_automations_count_dashboard
+        state: >
+          {{ states.automation | selectattr('state', 'eq', 'on') | list | count }}
+        icon: mdi:robot
+      
+      # Count disabled automations
+      - name: "Disabled Automations Count"
+        unique_id: disabled_automations_count_dashboard
+        state: >
+          {{ states.automation | selectattr('state', 'eq', 'off') | list | count }}
+        icon: mdi:robot-off
+      
+      # Total automations count
+      - name: "Total Automations Count"
+        unique_id: total_automations_count_dashboard
+        state: >
+          {{ states.automation | list | count }}
+        icon: mdi:robot-outline
+      
+      # Automations by file - Simple mapping sensor
+      - name: "Automations File Mapping"
+        unique_id: automations_file_mapping
+        state: "{{ states.automation | list | count }}"
+        icon: mdi:file-document-multiple
+        attributes:
+          # Inverter Automations
+          inverter_sunset_sunrise_id: "1686299812078"
+          inverter_sunset_sunrise_file: "automations.yaml"
+          inverter_sunset_sunrise_name: "Inverter: Switch to Export essentials/Non-Essentials"
+          
+          inverter_morning_check_id: "inverter_daily_morning_check"
+          inverter_morning_check_file: "packages/essentials_automations.yaml"
+          inverter_morning_check_name: "Inverter Daily Morning Check"
+          
+          inverter_config_update_id: "1680707528756"
+          inverter_config_update_file: "automations.yaml"
+          inverter_config_update_name: "InverterConfig Update Times"
+          
+          # Backup Automations
+          google_drive_cleanup_id: "google_drive_monthly_cleanup"
+          google_drive_cleanup_file: "automations.yaml"
+          google_drive_cleanup_name: "Google Drive Monthly Cleanup"
+          
+          google_drive_backup_id: "google_drive_pre_update_backup"
+          google_drive_backup_file: "automations.yaml"
+          google_drive_backup_name: "Google Drive Pre-Update Emergency Backup"
+          
+          onedrive_daily_id: "onedrive_daily_report"
+          onedrive_daily_file: "automations_onedrive.yaml"
+          onedrive_daily_name: "OneDrive Daily Status Report"
+          
+          onedrive_warning_id: "onedrive_storage_warning"
+          onedrive_warning_file: "automations_onedrive.yaml"
+          onedrive_warning_name: "OneDrive Storage Warning"
+          
+          onedrive_health_id: "onedrive_connection_health"
+          onedrive_health_file: "automations_onedrive.yaml"
+          onedrive_health_name: "OneDrive Connection Health Monitor"
+          
+          # Monitoring Automations
+          metrofibre_speed_id: "1757668937096"
+          metrofibre_speed_file: "automations.yaml"
+          metrofibre_speed_name: "Metrofibre Low Speed Alert"
+          
+          metrofibre_disconnect_id: "1757668970351"
+          metrofibre_disconnect_file: "automations.yaml"
+          metrofibre_disconnect_name: "Metrofibre Disconnection Alert"
+          
+          failed_automation_id: "failed_automation_detection"
+          failed_automation_file: "packages/automation_management.yaml"
+          failed_automation_name: "Failed Automation Detection"
+          
+          system_performance_id: "system_performance_monitoring"
+          system_performance_file: "packages/automation_management.yaml"
+          system_performance_name: "System Performance Monitoring"
+          
+          # Reporting Automations
+          daily_report_id: "comprehensive_daily_report_optimized"
+          daily_report_file: "automations_sensor_extract.yaml"
+          daily_report_name: "Daily System Report - Comprehensive"
+          
+          prepaid_meter_id: "1717429630744"
+          prepaid_meter_file: "automations.yaml"
+          prepaid_meter_name: "Prepaid meter recharge"
