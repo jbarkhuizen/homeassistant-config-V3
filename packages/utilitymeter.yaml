@@ -68,331 +68,331 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Freezer Garage Centre Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views      
-  #hourly_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: hourly
-  #daily_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: daily
-  #weekly_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: weekly
-  #monthly_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: monthly
-  #quarterly_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: quarterly
-  #yearly_freezer_garage_centre_power:
-  #  source: sensor.freezer_garage_centre_power
-  #  cycle: yearly
-  hourly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+hourly_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: hourly
+daily_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: daily
+weekly_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: weekly
+monthly_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: monthly
+quarterly_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: quarterly
+yearly_freezer_garage_centre_power:
+   source: sensor.freezer_garage_centre_power
+   cycle: yearly
+hourly_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: hourly
-  daily_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+daily_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: daily
-  weekly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+weekly_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: weekly
-  monthly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+monthly_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: monthly
-  quarterly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+quarterly_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: quarterly
-  yearly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
+yearly_freezer_garage_centre_energy:
+    source: sensor.freezer_garage_centre_energy    # CHANGE THIS LINE
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
-  # Freezer Garage Left Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  #hourly_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: hourly
-  #daily_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: daily
-  #weekly_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: weekly
-  #monthly_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: monthly
-  #quarterly_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: quarterly
-  #yearly_freezer_garage_left_power:
-  #  source: sensor.freezer_garage_left_power
-  #  cycle: yearly
-  hourly_freezer_garage_left_power:
+#   Freezer Garage Left Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+hourly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: hourly
+daily_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: daily
+weekly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: weekly
+monthly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: monthly
+quarterly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: quarterly
+yearly_freezer_garage_left_power:
+    source: sensor.freezer_garage_left_power
+    cycle: yearly
+hourly_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: hourly
-  daily_freezer_garage_left_power:
+daily_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: daily
-  weekly_freezer_garage_left_power:
+weekly_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: weekly
-  monthly_freezer_garage_left_power:
+monthly_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: monthly
-  quarterly_freezer_garage_left_power:
+quarterly_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: quarterly
-  yearly_freezer_garage_left_power:
+yearly_freezer_garage_left_energy:
     source: sensor.sonoff_1000cd8209_energy
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Inverter Power Room Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_inverter_power_room_power:
+hourly_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: hourly
-  daily_inverter_power_room_power:
+daily_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: daily
-  weekly_inverter_power_room_power:
+weekly_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: weekly
-  monthly_inverter_power_room_power:
+monthly_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: monthly
-  quarterly_inverter_power_room_power:
+quarterly_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: quarterly
-  yearly_inverter_power_room_power:
+yearly_inverter_power_room_power:
     source: sensor.inverter_power_room_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 1 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
-  hourly_plugs_1_power:
+hourly_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: hourly
-  daily_plugs_1_power:
+daily_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: daily
-  weekly_plugs_1_power:
+weekly_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: weekly
-  monthly_plugs_1_power:
+monthly_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: monthly
-  quarterly_plugs_1_power:
+quarterly_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: quarterly
-  yearly_plugs_1_power:
+yearly_plugs_1_power:
     source: sensor.plugs_1_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 2 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
-  hourly_plugs_2_power:
+hourly_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: hourly
-  daily_plugs_2_power:
+daily_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: daily
-  weekly_plugs_2_power:
+weekly_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: weekly
-  monthly_plugs_2_power:
+monthly_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: monthly
-  quarterly_plugs_2_power:
+quarterly_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: quarterly
-  yearly_plugs_2_power:
+yearly_plugs_2_power:
     source: sensor.plugs_2_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs 3 Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views    
-  hourly_plugs_3_power:
+hourly_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: hourly
-  daily_plugs_3_power:
+daily_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: daily
-  weekly_plugs_3_power:
+weekly_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: weekly
-  monthly_plugs_3_power:
+monthly_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: monthly
-  quarterly_plugs_3_power:
+quarterly_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: quarterly
-  yearly_plugs_3_power:
+yearly_plugs_3_power:
     source: sensor.plugs_3_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Plugs Kas Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views  
-  hourly_plugs_kas_power:
+hourly_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: hourly
-  daily_plugs_kas_power:
+daily_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: daily
-  weekly_plugs_kas_power:
+weekly_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: weekly
-  monthly_plugs_kas_power:
+monthly_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: monthly
-  quarterly_plugs_kas_power:
+quarterly_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: quarterly
-  yearly_plugs_kas_power:
+yearly_plugs_kas_power:
     source: sensor.plugs_kas_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Salon Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_salon_power:
+hourly_salon_power:
     source: sensor.salon_power
     cycle: hourly
-  daily_salon_power:
+daily_salon_power:
     source: sensor.salon_power
     cycle: daily
-  weekly_salon_power:
+weekly_salon_power:
     source: sensor.salon_power
     cycle: weekly
-  monthly_salon_power:
+monthly_salon_power:
     source: sensor.salon_power
     cycle: monthly
-  quarterly_salon_power:
+quarterly_salon_power:
     source: sensor.salon_power
     cycle: quarterly
-  yearly_salon_power:
+yearly_salon_power:
     source: sensor.salon_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Study Sensors - Daily, Weekly, Monthly, Quarterly, Yearly, Hourly views
-  hourly_study_power:
+hourly_study_power:
     source: sensor.study_power
     cycle: hourly
-  daily_study_power:
+daily_study_power:
     source: sensor.study_power
     cycle: daily
-  weekly_study_power:
+weekly_study_power:
     source: sensor.study_power
     cycle: weekly
-  monthly_study_power:
+monthly_study_power:
     source: sensor.study_power
     cycle: monthly
-  quarterly_study_power:
+quarterly_study_power:
     source: sensor.study_power
     cycle: quarterly
-  yearly_study_power:
+yearly_study_power:
     source: sensor.study_power
     cycle: yearly
   
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Study Aircon Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_study_aircon_power:
+hourly_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: hourly
-  daily_study_aircon_power:
+daily_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: daily
-  weekly_study_aircon_power:
+weekly_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: weekly
-  monthly_study_aircon_power:
+monthly_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: monthly
-  quarterly_study_aircon_power:
+quarterly_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: quarterly
-  yearly_study_aircon_power:
+yearly_study_aircon_power:
     source: sensor.study_aircon_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Routers Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_routers_power:
+hourly_routers_power:
     source: sensor.routers_power
     cycle: hourly
-  daily_routers_power:
+daily_routers_power:
     source: sensor.routers_power
     cycle: daily
-  weekly_routers_power:
+weekly_routers_power:
     source: sensor.routers_power
     cycle: weekly
-  monthly_routers_power:
+monthly_routers_power:
     source: sensor.routers_power
     cycle: monthly
-  quarterly_routers_power:
+quarterly_routers_power:
     source: sensor.routers_power
     cycle: quarterly
-  yearly_routers_power:
+yearly_routers_power:
     source: sensor.routers_power
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Woonstel Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_woonstel_energy:
+hourly_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: hourly
-  daily_woonstel_energy:
+daily_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: daily
-  weekly_woonstel_energy:
+weekly_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: weekly
-  monthly_woonstel_energy:
+monthly_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: monthly
-  quarterly_woonstel_energy:
+quarterly_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: quarterly
-  yearly_woonstel_energy:
+yearly_woonstel_energy:
     source: sensor.woonstel_energy
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Geyser External Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_geyser_ext_energy:
+hourly_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: hourly
-  daily_geyser_ext_energy:
+daily_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: daily
-  weekly_geyser_ext_energy:
+weekly_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: weekly
-  monthly_geyser_ext_energy:
+monthly_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: monthly
-  quarterly_geyser_ext_energy:
+quarterly_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: quarterly
-  yearly_geyser_ext_energy:
+yearly_geyser_ext_energy:
     source: sensor.geyser_ext_energy
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Pool Pump Energy Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
-  hourly_pool_pump_energy:
+hourly_pool_pump_energy:
     source: sensor.pool_pump_energy
     cycle: hourly
-  daily_pool_pump_energy:
+daily_pool_pump_energy:
     source: sensor.pool_pump_energy
     cycle: daily
-  weekly_daily_pool_energy:
+weekly_daily_pool_energy:
     source: sensor.pool_pump_energy
     cycle: weekly
-  monthly_daily_pool_energy:
+monthly_daily_pool_energy:
     source: sensor.pool_pump_energy
     cycle: monthly
-  quarterly_daily_pool_energy:
+quarterly_daily_pool_energy:
     source: sensor.pool_pump_energy
     cycle: quarterly
-  yearly_daily_pool_energy:
+yearly_daily_pool_energy:
     source: sensor.pool_pump_energy
     cycle: yearly
