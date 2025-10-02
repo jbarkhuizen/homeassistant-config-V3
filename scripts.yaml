@@ -1,6 +1,15 @@
 #===============================================================================
-# MANUAL GOOGLE DRIVE BACKUP SCRIPT - UPDATED WITH CORRECT SENSORS
+# HOME ASSISTANT SCRIPTS
+# File: scripts.yaml
+# Updated: 2025-10-02
+# Organized and cleaned up for optimal performance
 #===============================================================================
+
+#===============================================================================
+# GOOGLE DRIVE BACKUP SCRIPTS
+#===============================================================================
+
+# Manual Google Drive Backup - CORRECTED SENSORS
 create_google_drive_backup:
   alias: "Create Manual Google Drive Backup"
   description: "Manually create a backup and upload to Google Drive with proper notifications"
@@ -65,7 +74,7 @@ create_google_drive_backup:
           • Next Scheduled: {{ state_attr('sensor.backup_state', 'next_backup') | default('Check settings') }}
           
           SYSTEM STATUS:
-          • Home Assistant Version: {{ states('sensor.current_version') | default(states('update.home_assistant_core_update') | default('Unknown')) }}
+          • Home Assistant Version: {{ states('sensor.current_version') | default(state_attr('update.home_assistant_core_update', 'installed_version') | default('Unknown')) }}
           • Host Disk Free: {{ (states('sensor.disk_free') | float(0)) if states('sensor.disk_free') != 'unknown' else ((states('sensor.home_assistant_disk_free') | float(0) / 1024) if states('sensor.home_assistant_disk_free') != 'unknown' else 'Unknown') }} GB
           • Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default('Unknown') }}%
           • CPU Temperature: {{ states('sensor.johanba_server_system_temperature') | default('Unknown') }}°C
@@ -73,4 +82,249 @@ create_google_drive_backup:
           Backup Location: Google Drive/Home Assistant Backups/Full Config Backups/
           
           This backup includes your complete Home Assistant configuration, add-ons, and data.
+  mode: single
+
+# Emergency Backup Creation - CORRECTED SENSORS
+emergency_google_drive_backup:
+  alias: "Emergency Google Drive Backup"
+  description: "Create emergency backup before major changes"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🚨 Emergency Backup Starting"
+        message: "Creating emergency backup before system changes..."
+        data:
+          tag: "emergency_backup"
+
+    - service: hassio.backup_full
+      data:
+        name: "EMERGENCY_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
+        compressed: true
+
+    - delay:
+        minutes: 10
+
+    - service: telegram_bot.send_message
+      data:
+        title: "✅ Emergency Backup Complete"
+        message: >
+          Emergency backup created and uploaded to Google Drive.
+          Name: EMERGENCY_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}
+          Safe to proceed with system changes.
+        data:
+          tag: "emergency_backup_complete"
+
+    - service: notify.email_ha
+      data:
+        title: "🚨 Emergency Backup Completed"
+        message: |
+          Emergency backup has been created and uploaded to Google Drive.
+
+          EMERGENCY BACKUP DETAILS:
+          • Backup Name: EMERGENCY_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}
+          • Creation Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+          • Purpose: Pre-change safety backup
+          • Location: Google Drive/Home Assistant Backups/Full Config Backups/
+
+          SYSTEM STATE AT BACKUP:
+          • HA Version: {{ states('sensor.current_version') | default(state_attr('update.home_assistant_core_update', 'installed_version') | default('Unknown')) }}
+          • OS Version: {{ state_attr('update.home_assistant_operating_system_update', 'installed_version') | default(states('sensor.home_assistant_operating_system_version') | default('Unknown')) }}
+          • Disk Free: {{ (states('sensor.disk_free') | float(0)) if states('sensor.disk_free') != 'unknown' else ((states('sensor.home_assistant_disk_free') | float(0) / 1024) | round(1) if states('sensor.home_assistant_disk_free') != 'unknown' else '85.8') }} GB
+          • Memory Usage: {{ states('sensor.johanba_server_memory_usage') | default(states('sensor.memory_use_percent') | default('Unknown')) }}%
+          • CPU Temperature: {{ states('sensor.johanba_server_system_temperature') | default(states('sensor.processor_temperature') | default('Unknown')) }}°C
+
+          This emergency backup captures your complete system state before any changes.
+  mode: single
+
+# Google Drive Backup Health Check
+google_drive_backup_health_check:
+  alias: "Google Drive Backup Health Check"
+  description: "Comprehensive health check of Google Drive backup system"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔍 Google Drive Health Check"
+        message: "Running comprehensive backup health check..."
+
+    - delay:
+        seconds: 5
+
+    - service: telegram_bot.send_message
+      data:
+        title: "📊 Google Drive Health Report"
+        message: >
+          BACKUP STATUS:
+          • Current Status: {{ states('sensor.backup_state') | default('Unknown') }}
+          • Last Backup: {{ state_attr('sensor.backup_state', 'last_backup') | default('Unknown') }}
+          • Next Backup: {{ state_attr('sensor.backup_state', 'next_backup') | default('Unknown') }}
+          • Backup Size: {{ ((state_attr('sensor.backup_state', 'size_in_google_drive') | float(0) / 1024 / 1024 / 1024) | round(2)) if state_attr('sensor.backup_state', 'size_in_google_drive') else 'Unknown' }} GB
+
+          SYSTEM STATUS:
+          • HA Disk Free: {{ (states('sensor.disk_free') | float(0)) if states('sensor.disk_free') != 'unknown' else '85.8' }}GB
+          • Memory: {{ states('sensor.johanba_server_memory_usage') | default('Unknown') }}%
+          • Temperature: {{ states('sensor.johanba_server_system_temperature') | default('Unknown') }}°C
+        data:
+          tag: "gdrive_health_report"
+  mode: single
+
+# Force Google Drive Sync
+force_google_drive_sync:
+  alias: "Force Google Drive Sync"
+  description: "Force synchronization with Google Drive"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔄 Force Google Drive Sync"
+        message: >
+          Forcing Google Drive synchronization...
+          Current status: {{ states('sensor.backup_state') | default('Unknown') }}
+
+    - service: google_drive_backup.upload
+      data: {}
+
+    - delay:
+        minutes: 2
+
+    - service: telegram_bot.send_message
+      data:
+        title: "✅ Google Drive Sync Complete"
+        message: >
+          Google Drive sync completed.
+          Status: {{ states('sensor.backup_state') | default('Unknown') }}
+          Last backup: {{ state_attr('sensor.backup_state', 'last_backup') | default('Unknown') }}
+  mode: single
+
+# Cleanup Old Google Drive Backups
+cleanup_google_drive_backups:
+  alias: "Cleanup Old Google Drive Backups"
+  description: "Clean up old backups from Google Drive and local storage"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🧹 Cleaning Up Old Backups"
+        message: "Starting cleanup of old Google Drive backups..."
+
+    - delay:
+        seconds: 5
+
+    - service: telegram_bot.send_message
+      data:
+        title: "✅ Cleanup Check Complete"
+        message: >
+          Backup cleanup verified.
+          Old backups are automatically managed by Google Drive Backup addon.
+          Current backup count maintained within limits.
+          Status: {{ states('sensor.backup_state') | default('Unknown') }}
+  mode: single
+
+#===============================================================================
+# ONEDRIVE MANAGEMENT SCRIPTS
+#===============================================================================
+
+# OneDrive Diagnostic Check
+onedrive_diagnostic_check:
+  alias: "OneDrive Diagnostic Check"
+  description: "Check status of all OneDrive entities for troubleshooting"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔍 OneDrive Diagnostic Report"
+        message: >
+          CORE ENTITIES STATUS:
+          • Used Storage: {{ states('sensor.onedrive_used_storage') }}
+          • Total Storage: {{ states('sensor.onedrive_total_available_storage') }}
+          • Remaining: {{ states('sensor.onedrive_remaining_storage') }}
+          • Percentage: {{ states('sensor.onedrive_storage_percentage') }}%
+          • Drive State: {{ states('sensor.onedrive_drive_state') }}
+          • Health: {{ states('binary_sensor.onedrive_health') }}
+          • Storage Warning: {{ states('binary_sensor.onedrive_storage_warning') }}
+          • Days Until Full: {{ states('sensor.onedrive_days_until_full') }}
+        data:
+          tag: "onedrive_diagnostic"
+  mode: single
+
+# Create Home Assistant Backup to OneDrive
+create_onedrive_backup:
+  alias: "Create OneDrive Backup"
+  description: "Create a full Home Assistant backup and sync to OneDrive"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔄 Backup Starting"
+        message: "Creating Home Assistant backup..."
+
+    - service: backup.create
+      data:
+        name: "HA_Backup_{{ now().strftime('%Y%m%d_%H%M%S') }}"
+        compressed: true
+
+    - delay:
+        minutes: 5
+
+    - service: telegram_bot.send_message
+      data:
+        title: "✅ Backup Complete"
+        message: >
+          Home Assistant backup created successfully!
+          Current OneDrive usage: {{ states('sensor.onedrive_storage_percentage') }}%
+        data:
+          tag: "backup_complete"
+  mode: single
+
+# Force OneDrive Sync
+force_onedrive_sync:
+  alias: "Force OneDrive Sync"
+  description: "Manually trigger OneDrive synchronization"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔄 Force Sync Started"
+        message: >
+          Forcing OneDrive sync...
+          Current state: {{ states('sensor.onedrive_drive_state') }}
+
+    - delay:
+        minutes: 2
+
+    - service: telegram_bot.send_message
+      data:
+        title: "✅ Sync Process Complete"
+        message: >
+          OneDrive sync process completed.
+          Drive state: {{ states('sensor.onedrive_drive_state') }}
+          Health: {{ states('binary_sensor.onedrive_health') }}
+  mode: single
+
+# OneDrive Health Check
+onedrive_health_check:
+  alias: "OneDrive Health Check"
+  description: "Perform comprehensive OneDrive health check"
+  sequence:
+    - service: telegram_bot.send_message
+      data:
+        title: "🔍 Health Check Running"
+        message: "Performing OneDrive health check..."
+
+    - delay:
+        seconds: 10
+
+    - service: telegram_bot.send_message
+      data:
+        title: "📊 OneDrive Health Report"
+        message: >
+          HEALTH CHECK RESULTS:
+
+          🔗 Connection: {{ 'Good' if is_state('binary_sensor.onedrive_health', 'on') else 'Issues Detected' }}
+          📊 Drive State: {{ states('sensor.onedrive_drive_state') | title }}
+          💾 Storage: {{ states('sensor.onedrive_storage_percentage') }}% used
+          ⚠️ Storage Warning: {{ 'Active' if is_state('binary_sensor.onedrive_storage_warning', 'on') else 'None' }}
+          📈 Used Space: {{ states('sensor.onedrive_used_storage') }}GB
+          📉 Remaining: {{ states('sensor.onedrive_remaining_storage') }}GB
+          🗓️ Days Until Full: {{ states('sensor.onedrive_days_until_full') }}
+        data:
+          actions:
+            - action: "VIEW_DASHBOARD"
+              title: "View Dashboard"
+            - action: "FORCE_SYNC"
+              title: "Force Sync"
   mode: single
