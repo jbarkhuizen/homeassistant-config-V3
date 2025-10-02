@@ -68,44 +68,80 @@ utility_meter:
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Freezer Garage Centre Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views      
+  #hourly_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: hourly
+  #daily_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: daily
+  #weekly_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: weekly
+  #monthly_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: monthly
+  #quarterly_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: quarterly
+  #yearly_freezer_garage_centre_power:
+  #  source: sensor.freezer_garage_centre_power
+  #  cycle: yearly
   hourly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: hourly
   daily_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: daily
   weekly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: weekly
   monthly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: monthly
   quarterly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: quarterly
   yearly_freezer_garage_centre_power:
-    source: sensor.freezer_garage_centre_power
+    source: sensor.freezer_garage_centre_power    # CHANGE THIS LINE
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          
   # Freezer Garage Left Sensors - Daily, Weekly, Monthly, Quarterly, Yearly views
+  #hourly_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: hourly
+  #daily_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: daily
+  #weekly_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: weekly
+  #monthly_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: monthly
+  #quarterly_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: quarterly
+  #yearly_freezer_garage_left_power:
+  #  source: sensor.freezer_garage_left_power
+  #  cycle: yearly
   hourly_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: hourly
   daily_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: daily
   weekly_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: weekly
   monthly_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: monthly
   quarterly_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: quarterly
   yearly_freezer_garage_left_power:
-    source: sensor.freezer_garage_left_power
+    source: sensor.sonoff_1000cd8209_energy
     cycle: yearly
   
   #----------------------------------------------------------------------------------------------------------------------          

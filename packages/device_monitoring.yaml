@@ -102,7 +102,38 @@ input_boolean:
 # TEMPLATE SENSORS - Advanced monitoring and calculations
 #==============================================================================
 template:
-  - sensor:
+#added by Claude to fix Freezer Sensors
+- sensor:
+      #========================================================================
+      # FREEZER POWER SENSOR ALIASES
+      # Created: 2025-10-02
+      # Purpose: Create standard names for SONOFF power sensors
+      #========================================================================
+      
+      # Centre Freezer Power (Current consumption in Watts)
+      - name: "Freezer Garage Centre Power"
+        unique_id: freezer_garage_centre_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ states('sensor.sonoff_1000cd8649_power') | float(0) }}
+        availability: >
+          {{ states('sensor.sonoff_1000cd8649_power') not in ['unknown', 'unavailable', 'none'] }}
+        icon: mdi:snowflake
+      
+      # Left Freezer Power (Current consumption in Watts)
+      - name: "Freezer Garage Left Power"
+        unique_id: freezer_garage_left_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ states('sensor.sonoff_1000cd8209_power') | float(0) }}
+        availability: >
+          {{ states('sensor.sonoff_1000cd8209_power') not in ['unknown', 'unavailable', 'none'] }}
+        icon: mdi:snowflake
+
       # FREEZER CENTRE STATUS
       - name: "Freezer Centre Status"
         unique_id: freezer_centre_status
@@ -277,7 +308,7 @@ template:
           {% endif %}
         icon: mdi:percent
   
-  - binary_sensor:
+- binary_sensor:
       # FREEZER CENTRE ALERTS
       - name: "Freezer Centre High Power Alert"
         unique_id: freezer_centre_high_power_alert

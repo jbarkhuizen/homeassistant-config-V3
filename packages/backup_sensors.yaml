@@ -1,0 +1,74 @@
+#===============================================================================
+# BACKUP MONITORING SENSORS - CORRECTED SENSOR REFERENCES
+#===============================================================================
+sensor:
+  # Google Drive Backup Size in GB
+  - platform: template
+    sensors:
+      google_drive_backup_size:
+        friendly_name: "Google Drive Backup Size"
+        value_template: >
+          {% if state_attr('sensor.backup_state', 'size_in_google_drive') %}
+            {{ (state_attr('sensor.backup_state', 'size_in_google_drive') / 1024 / 1024 / 1024) | round(2) }}
+          {% else %}
+            unknown
+          {% endif %}
+        unit_of_measurement: "GB"
+        icon_template: mdi:harddisk
+      
+      # Google Drive Backup Status
+      google_drive_backup_status:
+        friendly_name: "Google Drive Backup Status"
+        value_template: >
+          {{ states('sensor.backup_state') | default('unknown') }}
+        icon_template: >
+          {% if states('sensor.backup_state') == 'backed_up' %}
+            mdi:cloud-check
+          {% elif states('sensor.backup_state') == 'backing_up' %}
+            mdi:cloud-upload
+          {% else %}
+            mdi:cloud-alert
+          {% endif %}
+      
+      # Google Drive Last Backup
+      google_drive_last_backup:
+        friendly_name: "Google Drive Last Backup"
+        value_template: >
+          {% if state_attr('sensor.backup_state', 'last_backup') %}
+            {{ as_timestamp(state_attr('sensor.backup_state', 'last_backup')) | timestamp_custom('%Y-%m-%d %H:%M:%S', true) }}
+          {% else %}
+            unknown
+          {% endif %}
+        icon_template: mdi:calendar-clock
+      
+      # Google Drive Next Backup
+      google_drive_next_backup:
+        friendly_name: "Google Drive Next Backup"
+        value_template: >
+          {% if state_attr('sensor.backup_state', 'next_backup') %}
+            {{ as_timestamp(state_attr('sensor.backup_state', 'next_backup')) | timestamp_custom('%Y-%m-%d %H:%M:%S', true) }}
+          {% else %}
+            unknown
+          {% endif %}
+        icon_template: mdi:calendar-plus
+      
+      # Home Assistant Core Version
+      home_assistant_core_version:
+        friendly_name: "Home Assistant Core Version"
+        value_template: >
+          {{ states('sensor.current_version') | default(state_attr('update.home_assistant_core_update', 'installed_version') | default('unknown')) }}
+        icon_template: mdi:home-assistant
+      
+      # Host Disk Free Space
+      home_assistant_host_disk_free:
+        friendly_name: "Host Disk Free Space"
+        value_template: >
+          {% if states('sensor.disk_free') != 'unknown' %}
+            {{ states('sensor.disk_free') }}
+          {% elif states('sensor.home_assistant_disk_free') != 'unknown' %}
+            {{ (states('sensor.home_assistant_disk_free') | float(0) / 1024) | round(1) }}
+          {% else %}
+            unknown
+          {% endif %}
+        unit_of_measurement: "GB"
+        icon_template: mdi:harddisk
