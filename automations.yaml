@@ -32,7 +32,7 @@
         'on') else 'Stopped ❌' }}\n\nThis automated report confirms your email notifications
         are working correctly.\n\nBest regards,\nHome Assistant Automation System\n"
 - id: weekly_system_report
-  alias: Weekly System Report - Sunday 09:00
+  alias: Weekly System Report - Sunday 10:00
   description: Comprehensive weekly system report
   trigger:
   - platform: time
@@ -199,12 +199,12 @@
         %}\n• {{ issue }}\n  {% endfor %}\n{% else %}\n• ✅ All systems normal\n{%
         endif %}\n\n\U0001F3AF _Home Assistant startup complete - all systems monitored_\n"
 - id: enhanced_daily_system_report_09h00
-  alias: Enhanced Daily System Report at 09:00
+  alias: Enhanced Daily System Report at 08:00
   description: Comprehensive daily system report with energy, automation, and system
     health data
   trigger:
   - platform: time
-    at: 09:00:00
+    at: 09:45:00
   condition:
   - condition: state
     entity_id: input_boolean.advanced_notifications
